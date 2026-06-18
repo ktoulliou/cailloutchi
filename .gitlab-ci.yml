@@ -1,0 +1,14 @@
+# .gitlab-ci.yml — déploie le site sur GitLab Pages
+image: alpine:latest
+
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public
+    - cp cailloutchi.html public/index.html   # le caillou s'affiche à la racine de l'URL
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    

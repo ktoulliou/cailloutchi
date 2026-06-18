@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cailloutchi — le compagnon minéral</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Palette: pierre tiède au crépuscule. Une seule audace : l'argile (clay). */
+    --sky-top:#E7E1EC;
+    --sky-bottom:#F6EBDD;
+    --glow:#FBE9C9;
+    --ink:#2E2722;
+    --muted:#857A6E;
+    --card:#FBF6EF;
+    --card-line:#EBE0D2;
+    --clay:#C56B57;       /* accent principal, parcimonieux */
+    --clay-deep:#A8533F;
+    --honey:#E0A95E;
+    --sage:#8FA17B;
+    --sage-deep:#6E8159;
+    --stone-hi:#A39888;
+    --stone-mid:#7E7568;
+    --stone-lo:#5E5650;
+    --bar-track:#EDE3D5;
+    /* typo */
+    --f-display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
+    --f-body:"Inter",system-ui,-apple-system,sans-serif;
+    --f-mono:"Space Mono","SFMono-Regular",ui-monospace,monospace;
+    --shadow-soft:0 24px 60px -28px rgba(60,46,34,.45);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:var(--f-body);
+    color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 80% -10%, var(--glow) 0%, transparent 45%),
+      linear-gradient(170deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+    background-attachment:fixed;
+    min-height:100svh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 16px;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* soft drifting light, very subtle */
+  .ambient{
+    position:fixed; inset:-20vmax; z-index:0; pointer-events:none;
+    background:radial-gradient(38vmax 38vmax at 30% 20%, rgba(251,233,201,.55), transparent 60%);
+    filter:blur(8px);
+    animation:drift 32s ease-in-out infinite alternate;
+  }
+  @keyframes drift{ from{transform:translate(-4%, -2%);} to{transform:translate(6%, 4%);} }
+
+  .stage{
+    position:relative; z-index:1;
+    width:100%; max-width:560px;
+  }
+
+  .card{
+    position:relative;
+    background:linear-gradient(180deg, #FFFDF9, var(--card));
+    border:1px solid var(--card-line);
+    border-radius:32px;
+    box-shadow:var(--shadow-soft);
+    padding:26px 26px 30px;
+    overflow:hidden;
+  }
+  .card::before{ /* inner top sheen */
+    content:""; position:absolute; left:0; right:0; top:0; height:120px;
+    background:linear-gradient(180deg, rgba(255,255,255,.7), transparent);
+    pointer-events:none;
+  }
+
+  /* ---------- top bar ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; position:relative; z-index:3;}
+  .wordmark{ display:flex; align-items:center; gap:9px;}
+  .pebble-mark{ width:26px; height:20px; border-radius:50% 50% 48% 52%/60% 60% 40% 40%;
+    background:radial-gradient(circle at 35% 30%, var(--stone-hi), var(--stone-lo));
+    box-shadow:inset 0 -3px 5px rgba(0,0,0,.25);}
+  .wordmark b{ font-family:var(--f-display); font-weight:600; font-size:18px; letter-spacing:.2px;}
+  .tools{ display:flex; gap:8px;}
+  .icon-btn{
+    appearance:none; border:1px solid var(--card-line); background:#fff;
+    width:38px; height:38px; border-radius:12px; cursor:pointer; font-size:16px; line-height:1;
+    color:var(--muted); transition:transform .12s ease, background .12s ease, color .12s;
+    display:grid; place-items:center;
+  }
+  .icon-btn:hover{ background:#FFF8EE; color:var(--ink); transform:translateY(-1px);}
+  .icon-btn:active{ transform:translateY(0) scale(.96);}
+
+  /* ---------- adopt screen ---------- */
+  .screen{ display:none; }
+  .screen.active{ display:block; animation:fade .4s ease both;}
+  @keyframes fade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+  .adopt{ text-align:center; padding:18px 6px 6px;}
+  .eyebrow{ font-family:var(--f-mono); font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:var(--clay); }
+  .adopt h1{
+    font-family:var(--f-display); font-weight:700;
+    font-size:clamp(30px,7vw,44px); line-height:1.02; margin:10px 0 6px;
+  }
+  .adopt p.lede{ color:var(--muted); max-width:36ch; margin:0 auto 22px; line-height:1.55; font-size:15.5px;}
+  .adopt-rock{ width:min(280px,72vw); margin:6px auto 18px; display:block; }
+  .name-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .field{
+    font-family:var(--f-body); font-size:17px; color:var(--ink);
+    border:1.5px solid var(--card-line); background:#fff; border-radius:14px;
+    padding:13px 16px; width:min(280px,70vw); outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .field:focus{ border-color:var(--clay); box-shadow:0 0 0 4px rgba(197,107,87,.14);}
+  .btn{
+    appearance:none; border:none; cursor:pointer; font-family:var(--f-display); font-weight:600;
+    font-size:16px; letter-spacing:.2px; color:#fff; background:var(--clay);
+    border-radius:14px; padding:13px 22px; transition:transform .12s, background .15s, box-shadow .15s;
+    box-shadow:0 10px 22px -10px rgba(168,83,63,.7);
+  }
+  .btn:hover{ background:var(--clay-deep); transform:translateY(-1px);}
+  .btn:active{ transform:translateY(0) scale(.98);}
+  .fine{ font-family:var(--f-mono); font-size:11px; color:var(--muted); margin-top:18px; letter-spacing:.3px;}
+
+  /* ---------- game screen ---------- */
+  .gamehead{ text-align:center; margin-top:14px;}
+  .name-line{ display:inline-flex; align-items:center; gap:8px; }
+  .pet-name{ font-family:var(--f-display); font-weight:600; font-size:clamp(24px,6vw,32px); line-height:1; }
+  .rename-input{ display:none; font-family:var(--f-display); font-weight:600; font-size:clamp(22px,6vw,30px);
+    text-align:center; border:none; border-bottom:2px dashed var(--clay); background:transparent; color:var(--ink); width:9ch; outline:none;}
+  .pencil{ font-size:13px; }
+  .readout{ font-family:var(--f-mono); font-size:14px; color:var(--ink); margin-top:7px; font-weight:700; letter-spacing:.5px;}
+  .readout .sub{ display:block; font-weight:400; font-size:11px; color:var(--muted); letter-spacing:.6px; margin-top:3px;}
+
+  /* arena: bubble + rock + fx */
+  .arena{ position:relative; height:clamp(250px,46vw,300px); margin:6px 0 4px; }
+  #fx{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:4; }
+  .rock-wrap{ position:absolute; inset:0; display:grid; place-items:center; z-index:2; }
+  .rock-svg{ width:min(300px,76vw); height:auto; overflow:visible; }
+
+  /* thought bubble */
+  .bubble{
+    position:absolute; left:50%; top:6px; transform:translateX(-50%) translateY(6px);
+    background:#fff; border:1px solid var(--card-line); color:var(--ink);
+    padding:11px 15px; border-radius:16px; font-size:14.5px; line-height:1.4; max-width:min(330px,82%);
+    text-align:center; box-shadow:0 12px 28px -16px rgba(60,46,34,.5);
+    opacity:0; transition:opacity .25s ease, transform .25s ease; z-index:6; pointer-events:none;
+  }
+  .bubble::after{ content:""; position:absolute; left:50%; bottom:-7px; transform:translateX(-50%) rotate(45deg);
+    width:14px; height:14px; background:#fff; border-right:1px solid var(--card-line); border-bottom:1px solid var(--card-line);}
+  .bubble.show{ opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* stats */
+  .stats{ display:flex; gap:10px; justify-content:center; margin:8px 0 18px; flex-wrap:wrap;}
+  .stat{ flex:1 1 0; min-width:128px; max-width:170px; }
+  .stat .lab{ display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-bottom:5px;}
+  .stat .lab .n{ font-family:var(--f-mono); font-size:11px; color:var(--ink); }
+  .stat .lab b{ font-weight:600; color:var(--ink); display:flex; gap:5px; align-items:center; }
+  .track{ height:11px; border-radius:999px; background:var(--bar-track); overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.08);}
+  .fill{ height:100%; width:50%; border-radius:999px; transition:width .5s cubic-bezier(.2,.8,.2,1); }
+  .fill.bonheur{ background:linear-gradient(90deg,#F0C36B,var(--honey)); }
+  .fill.proprete{ background:linear-gradient(90deg,#9ED0E6,#5FA9C9); }
+  .fill.lien{ background:linear-gradient(90deg,#B6C79C,var(--sage)); }
+
+  /* actions */
+  .actions{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center;}
+  .act{
+    appearance:none; cursor:pointer; border:1px solid var(--card-line);
+    background:#fff; color:var(--ink); font-family:var(--f-display); font-weight:500; font-size:15px;
+    border-radius:16px; padding:12px 16px; display:inline-flex; align-items:center; gap:8px;
+    transition:transform .12s, background .14s, border-color .14s, box-shadow .14s;
+  }
+  .act .emo{ font-size:18px; }
+  .act:hover{ background:#FFF8EE; border-color:#E4D2BD; transform:translateY(-2px); box-shadow:0 10px 20px -14px rgba(60,46,34,.5);}
+  .act:active{ transform:translateY(0) scale(.97);}
+  .act.primary{ background:var(--clay); color:#fff; border-color:transparent; box-shadow:0 12px 24px -12px rgba(168,83,63,.7);}
+  .act.primary:hover{ background:var(--clay-deep);}
+  .act:disabled{ opacity:.55; cursor:default; transform:none; box-shadow:none;}
+
+  .footline{ text-align:center; margin-top:16px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); letter-spacing:.4px;}
+  .footline .lvl{ color:var(--sage-deep); font-weight:700;}
+
+  /* toast / succès */
+  .toasts{ position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:50;
+    display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; width:min(380px,92vw);}
+  .toast{
+    background:var(--ink); color:#FBF6EF; border-radius:16px; padding:12px 16px; width:100%;
+    box-shadow:0 18px 40px -18px rgba(0,0,0,.6); display:flex; gap:12px; align-items:flex-start;
+    transform:translateY(-16px); opacity:0; transition:transform .35s cubic-bezier(.2,.9,.2,1), opacity .35s;
+  }
+  .toast.show{ transform:none; opacity:1;}
+  .toast .tEmo{ font-size:22px; line-height:1; flex:0 0 auto; margin-top:1px;}
+  .toast .tT{ font-family:var(--f-display); font-weight:600; font-size:14.5px; margin-bottom:2px;}
+  .toast .tD{ font-size:12.5px; color:#E9DECF; line-height:1.4;}
+
+  /* focus visibility */
+  :focus-visible{ outline:3px solid var(--clay); outline-offset:2px; border-radius:8px;}
+
+  @media (max-width:480px){
+    .card{ padding:20px 16px 24px; border-radius:26px;}
+    .act{ font-size:14px; padding:11px 13px;}
+    .stat{ min-width:104px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ambient{ animation:none;}
+    *{ animation-duration:.001ms !important; transition-duration:.08s !important;}
+  }
+</style>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<div class="stage">
+  <div class="card">
+    <div class="topbar">
+      <div class="wordmark"><span class="pebble-mark" aria-hidden="true"></span><b>Cailloutchi</b></div>
+      <div class="tools">
+        <button class="icon-btn" id="soundBtn" title="Activer / couper le son" aria-label="Son">🔊</button>
+        <button class="icon-btn" id="resetBtn" title="Abandonner mon caillou" aria-label="Recommencer">↺</button>
+      </div>
+    </div>
+
+    <!-- ADOPTION -->
+    <section class="screen active" id="adoptScreen">
+      <div class="adopt">
+        <div class="eyebrow">élevage minéral · modèle 3000</div>
+        <h1>Adoptez votre caillou.</h1>
+        <p class="lede">Un compagnon loyal, silencieux, increvable. Il ne mange pas, ne dort pas, ne bouge pas — mais il sera là dans un million d'années. Donnez-lui un petit nom.</p>
+        <!-- adoption rock (static, smiling) -->
+        <svg class="adopt-rock" viewBox="0 0 300 250" role="img" aria-label="Un petit caillou souriant">
+          <defs>
+            <radialGradient id="ag" cx="38%" cy="30%" r="80%">
+              <stop offset="0%" stop-color="#A89C8B"/>
+              <stop offset="55%" stop-color="#7E7568"/>
+              <stop offset="100%" stop-color="#574F49"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="150" cy="222" rx="104" ry="17" fill="#2E2722" opacity="0.14"/>
+          <path d="M45,150 C45,104 82,80 150,78 C220,76 258,108 256,152 C255,193 214,222 150,222 C88,222 45,196 45,150 Z" fill="url(#ag)"/>
+          <ellipse cx="108" cy="118" rx="40" ry="26" fill="#fff" opacity="0.10"/>
+          <circle cx="115" cy="120" r="3" fill="#B8AD9F" opacity=".55"/>
+          <circle cx="185" cy="112" r="2.4" fill="#B8AD9F" opacity=".5"/>
+          <circle cx="205" cy="135" r="3" fill="#544B45" opacity=".4"/>
+          <circle cx="92" cy="150" r="2.2" fill="#544B45" opacity=".4"/>
+          <!-- happy face -->
+          <path d="M110,150 Q119,140 128,150" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
+          <path d="M172,150 Q181,140 190,150" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
+          <ellipse cx="116" cy="168" rx="11" ry="7" fill="#E09F8F" opacity=".55"/>
+          <ellipse cx="184" cy="168" rx="11" ry="7" fill="#E09F8F" opacity=".55"/>
+          <path d="M132,170 Q150,188 168,170" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+        <div class="name-row">
+          <input class="field" id="nameField" maxlength="14" placeholder="ex. Roger, Kévin, Pétra…" autocomplete="off">
+          <button class="btn" id="adoptBtn">Adopter</button>
+        </div>
+        <div class="fine">aucune pierre n'a été blessée · 0 % de batterie requise</div>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section class="screen" id="gameScreen">
+      <div class="gamehead">
+        <div class="name-line">
+          <span class="pet-name" id="petName" title="Cliquer pour renommer">Roger</span>
+          <input class="rename-input" id="renameInput" maxlength="14">
+          <button class="icon-btn pencil" id="renameBtn" title="Renommer" aria-label="Renommer" style="width:30px;height:30px;border-radius:9px;">✎</button>
+        </div>
+        <div class="readout">
+          <span id="ageMain">0 j 00 h 00 min 00 s</span>
+          <span class="sub">âge géologique estimé : 4 537 000 000 ans · ensemble depuis l'adoption</span>
+        </div>
+      </div>
+
+      <div class="arena">
+        <div class="bubble" id="bubble">…</div>
+        <canvas id="fx"></canvas>
+        <div class="rock-wrap">
+          <!-- THE rock -->
+          <svg class="rock-svg" id="rockSvg" viewBox="0 0 300 250" role="img" aria-label="Votre caillou de compagnie">
+            <defs>
+              <radialGradient id="stoneGrad" cx="38%" cy="28%" r="82%">
+                <stop offset="0%" stop-color="#AC9F8D"/>
+                <stop offset="52%" stop-color="#7E7568"/>
+                <stop offset="100%" stop-color="#554D47"/>
+              </radialGradient>
+            </defs>
+
+            <!-- ground shadow (outside #rock so it doesn't wiggle) -->
+            <ellipse id="groundShadow" cx="150" cy="224" rx="100" ry="16" fill="#2E2722" opacity="0.15"/>
+
+            <g id="rock">
+              <!-- sprout grows from the top as bond deepens -->
+              <g id="sprout" data-stage="0" style="opacity:0;">
+                <path id="spStem" d="M186,84 C184,68 188,56 190,46" fill="none" stroke="#6E8159" stroke-width="3.4" stroke-linecap="round"/>
+                <path id="spLeafL" d="M188,66 C176,62 168,66 166,74 C176,76 184,74 188,66 Z" fill="#8FA17B" opacity="0"/>
+                <path id="spLeafR" d="M190,58 C202,52 211,54 214,62 C204,66 195,66 190,58 Z" fill="#9FB089" opacity="0"/>
+                <circle id="spBud" cx="190" cy="44" r="6" fill="#A8533F" opacity="0"/>
+                <g id="spFlower" opacity="0">
+                  <g fill="#E58BA0">
+                    <ellipse cx="190" cy="36" rx="5" ry="7"/>
+                    <ellipse cx="198" cy="44" rx="7" ry="5"/>
+                    <ellipse cx="190" cy="52" rx="5" ry="7"/>
+                    <ellipse cx="182" cy="44" rx="7" ry="5"/>
+                  </g>
+                  <circle cx="190" cy="44" r="4.4" fill="#F2C75B"/>
+                </g>
+              </g>
+
+              <path id="rockBody" d="M45,150 C45,104 82,80 150,78 C220,76 258,108 256,152 C255,193 214,222 150,222 C88,222 45,196 45,150 Z" fill="url(#stoneGrad)"/>
+
+              <!-- sheen + texture -->
+              <ellipse cx="106" cy="116" rx="42" ry="27" fill="#fff" opacity="0.10"/>
+              <g opacity="0.5">
+                <circle cx="116" cy="120" r="3" fill="#C2B7A8"/>
+                <circle cx="186" cy="108" r="2.3" fill="#C2B7A8"/>
+                <circle cx="92" cy="138" r="2" fill="#C2B7A8"/>
+                <circle cx="208" cy="132" r="2.6" fill="#544B45"/>
+                <circle cx="138" cy="104" r="1.8" fill="#544B45"/>
+                <circle cx="226" cy="158" r="2.2" fill="#544B45"/>
+                <circle cx="74" cy="160" r="2" fill="#544B45"/>
+              </g>
+              <path d="M70,170 q14,8 30,5" fill="none" stroke="#544B45" stroke-width="1.4" opacity="0.28"/>
+              <path d="M210,170 q-10,9 -22,8" fill="none" stroke="#544B45" stroke-width="1.4" opacity="0.24"/>
+
+              <!-- FACE -->
+              <g id="cheeks" opacity="0">
+                <ellipse cx="116" cy="170" rx="12" ry="7.5" fill="#E09F8F" opacity=".55"/>
+                <ellipse cx="184" cy="170" rx="12" ry="7.5" fill="#E09F8F" opacity=".55"/>
+              </g>
+              <g id="brows" opacity="0">
+                <path d="M104,138 L130,144" stroke="#2b2520" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M196,138 L170,144" stroke="#2b2520" stroke-width="4.5" stroke-linecap="round"/>
+              </g>
+
+              <g id="eyesOpen">
+                <ellipse cx="117" cy="152" rx="9" ry="11.5" fill="#2b2520"/>
+                <ellipse cx="183" cy="152" rx="9" ry="11.5" fill="#2b2520"/>
+                <circle cx="120" cy="148" r="2.6" fill="#fff" opacity=".9"/>
+                <circle cx="186" cy="148" r="2.6" fill="#fff" opacity=".9"/>
+              </g>
+              <g id="eyesHappy" style="display:none;">
+                <path d="M108,154 Q117,143 126,154" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
+                <path d="M174,154 Q183,143 192,154" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
+              </g>
+              <g id="eyesClosed" style="display:none;">
+                <path d="M108,152 Q117,159 126,152" fill="none" stroke="#2b2520" stroke-width="5.5" stroke-linecap="round"/>
+                <path d="M174,152 Q183,159 192,152" fill="none" stroke="#2b2520" stroke-width="5.5" stroke-linecap="round"/>
+              </g>
+
+              <path id="mouth" d="M134,176 Q150,184 166,176" fill="none" stroke="#2b2520" stroke-width="5.5" stroke-linecap="round"/>
+              <ellipse id="mouthO" cx="150" cy="180" rx="9" ry="11" fill="#2b2520" style="display:none;"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="lab"><b><span>😊</span> Bonheur</b><span class="n" id="vBonheur">50%</span></div>
+          <div class="track"><div class="fill bonheur" id="fBonheur"></div></div>
+        </div>
+        <div class="stat">
+          <div class="lab"><b><span>✨</span> Propreté</b><span class="n" id="vProprete">50%</span></div>
+          <div class="track"><div class="fill proprete" id="fProprete"></div></div>
+        </div>
+        <div class="stat">
+          <div class="lab"><b><span>🤝</span> Lien</b><span class="n" id="vLien">0%</span></div>
+          <div class="track"><div class="fill lien" id="fLien"></div></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="act primary" data-act="pet"><span class="emo">🫳</span> Caresser</button>
+        <button class="act" data-act="feed"><span class="emo">🍽️</span> Nourrir</button>
+        <button class="act" data-act="wash"><span class="emo">🚿</span> Laver</button>
+        <button class="act" data-act="talk"><span class="emo">💬</span> Parler</button>
+        <button class="act" data-act="trick"><span class="emo">🎓</span> Apprendre un tour</button>
+      </div>
+
+      <div class="footline">niveau d'amitié <span class="lvl" id="lvlText">0 · Connaissances minérales</span></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const SAVE_KEY = 'cailloutchi_v1';
+  const GEO_AGE = "4 537 000 000";
+
+  // ---------- state ----------
+  const state = {
+    name:"Roger",
+    bonheur:55, proprete:60, lien:0,
+    bond:0,                 // points -> level & lien bar
+    pets:0, talks:0, feeds:0, washes:0, tricks:0,
+    adoptedAt:Date.now(),
+    achievements:[],        // ids
+    muted:false
+  };
+
+  // ---------- save / load (robuste : marche sans stockage) ----------
+  function save(){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){/* sandbox : tant pis */}
+  }
+  function load(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      if(!raw) return false;
+      const o = JSON.parse(raw);
+      Object.assign(state, o);
+      if(!Array.isArray(state.achievements)) state.achievements=[];
+      return !!state.name;
+    }catch(e){ return false; }
+  }
+
+  // ---------- DOM ----------
+  const $=s=>document.querySelector(s);
+  const adoptScreen=$('#adoptScreen'), gameScreen=$('#gameScreen');
+  const nameField=$('#nameField'), adoptBtn=$('#adoptBtn');
+  const petName=$('#petName'), renameInput=$('#renameInput'), renameBtn=$('#renameBtn');
+  const ageMain=$('#ageMain');
+  const bubble=$('#bubble');
+  const fBonheur=$('#fBonheur'), fProprete=$('#fProprete'), fLien=$('#fLien');
+  const vBonheur=$('#vBonheur'), vProprete=$('#vProprete'), vLien=$('#vLien');
+  const lvlText=$('#lvlText'), footActions=document.querySelectorAll('.act');
+  const soundBtn=$('#soundBtn'), resetBtn=$('#resetBtn');
+  const rockEl=$('#rock'), groundShadow=$('#groundShadow');
+  const toasts=$('#toasts'), canvas=$('#fx');
+
+  // face parts
+  const eyesOpen=$('#eyesOpen'), eyesHappy=$('#eyesHappy'), eyesClosed=$('#eyesClosed');
+  const brows=$('#brows'), cheeks=$('#cheeks'), mouth=$('#mouth'), mouthO=$('#mouthO');
+
+  // sprout parts
+  const sprout=$('#sprout'), spLeafL=$('#spLeafL'), spLeafR=$('#spLeafR'), spBud=$('#spBud'), spFlower=$('#spFlower');
+
+  // ---------- audio (Web Audio, généré, zéro fichier) ----------
+  let actx=null, master=null;
+  function audio(){
+    if(actx) return actx;
+    try{
+      actx = new (window.AudioContext||window.webkitAudioContext)();
+      master = actx.createGain(); master.gain.value=0.18; master.connect(actx.destination);
+    }catch(e){ actx=null; }
+    return actx;
+  }
+  function tone(freq, dur, type, vol){
+    if(state.muted) return;
+    const c=audio(); if(!c) return;
+    if(c.state==='suspended') c.resume();
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(vol||0.6, c.currentTime+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+(dur||0.18));
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(c.currentTime+(dur||0.18)+0.02);
+  }
+  function noise(dur, vol){
+    if(state.muted) return;
+    const c=audio(); if(!c) return;
+    if(c.state==='suspended') c.resume();
+    const len=Math.floor(c.sampleRate*(dur||0.3));
+    const buf=c.createBuffer(1,len,c.sampleRate); const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++){ d[i]=(Math.random()*2-1)*(1-i/len); }
+    const src=c.createBufferSource(); src.buffer=buf;
+    const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1400;
+    const g=c.createGain(); g.gain.value=vol||0.4;
+    src.connect(lp); lp.connect(g); g.connect(master); src.start();
+  }
+  const snd = {
+    pet(combo){ tone(420+combo*22, 0.16, 'sine', 0.5); },
+    feed(){ tone(523,0.12,'triangle',0.5); setTimeout(()=>tone(659,0.16,'triangle',0.5),90); },
+    wash(){ noise(0.45,0.5); },
+    talk(){ tone(300,0.08,'sine',0.35); setTimeout(()=>tone(360,0.1,'sine',0.3),70); },
+    sparkle(){ [659,784,988,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.12,'sine',0.4),i*70)); },
+    level(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.16,'triangle',0.5),i*90)); }
+  };
+
+  // ---------- copy ----------
+  const THOUGHTS = [
+    "…",
+    "Je réfléchissais. Ça fait 4 milliards d'années que je réfléchis. J'y suis presque.",
+    "T'es mon meilleur ami. T'es aussi le seul qui me parle. Mais surtout le meilleur.",
+    "On sort ce soir ? Ah non. Je suis un caillou. On reste.",
+    "J'ai rêvé cette nuit. C'était sombre. Comme toujours. Mais c'était cosy.",
+    "Tu sais ce qui est bien, avec moi ? Je ne te jugerai jamais. Je ne peux pas. C'est physiologique.",
+    "Demande-moi n'importe quoi. La réponse sera : du silence minéral, et beaucoup d'amour.",
+    "Je me sens lourd aujourd'hui. Comme hier. Comme depuis le Précambrien.",
+    "Et si j'étais un galet ? … Non. Je suis un caillou. Assume, mon gars.",
+    "Caillou power.",
+    "Écoute-moi bien : tu n'entendras absolument rien. C'est ma façon de t'aimer.",
+    "Pas bougé de la journée. Record personnel. Encore.",
+    "Un conseil ? Reste solide. C'est tout ce que je sais faire.",
+    "Je garde tous tes secrets. Dans une faille, là, à gauche. Personne ne les trouvera.",
+    "Belle équipe, toi et moi. Toi tu fais tout. Moi je supervise.",
+    "Je suis pas du genre à m'emballer. Je suis du genre… sédimentaire.",
+    "Mon thérapeute dit que je devrais m'ouvrir. Compliqué : je suis compact.",
+    "T'inquiète pas pour moi. Je serai là dans un million d'années. Toi… on en reparle.",
+    "Des jours avec, des jours sans. Aujourd'hui, c'est un jour caillou.",
+    "Je t'aime gros comme une montagne. Une petite montagne. Mais une montagne.",
+    "Pose-moi où tu veux. Je m'adapte. Enfin, je reste. Mais avec le sourire.",
+    "Tu sens cette connexion ? Moi non plus. Mais l'intention est là.",
+    "Roches & roll.",
+    "Grande décision aujourd'hui : rien. Comme prévu.",
+    "Je peux pas te faire de câlin. Je peux juste être lourd contre toi. Ça compte ?",
+    "Patience. Je suis la preuve vivante que rien ne presse. Surtout pas moi.",
+    "On est bien, là. Toi qui me parles, moi qui existe. Le minimum syndical de l'amitié.",
+    "Je suis de pierre. Mais mon cœur aussi. C'est pour ça qu'il tiendra toujours."
+  ];
+  const REACT = {
+    pet:["mmh.","♥","encore.","*frémit légèrement* (non)","c'est agréable. je crois.","continue, humain."],
+    feed:["miam. (pour le geste)","merci. je digérerai rien, mais merci.","*ne mâche pas*","délicieux. probablement."],
+    wash:["aaah, frais.","tout propre !","*brille un peu* (illusion)","je me sentais poussiéreux."]
+  };
+  const TRICKS = [
+    {cmd:"Assis !", ok:"✓ déjà assis. talent inné."},
+    {cmd:"Pas bouger !", ok:"✓ maîtrisé à la perfection."},
+    {cmd:"Le mort !", ok:"✓ très convaincant. trop, peut-être."},
+    {cmd:"Donne la patte !", ok:"il n'a pas de patte. mais le regard est sincère."},
+    {cmd:"Roule !", ok:"il n'a pas roulé. mais il y a pensé très fort."}
+  ];
+  const LEVELS = [
+    {min:0,  title:"Connaissances minérales"},
+    {min:8,  title:"Bons camarades"},
+    {min:20, title:"Amis"},
+    {min:40, title:"Bons amis"},
+    {min:70, title:"Meilleurs amis pour toujours"},
+    {min:110,title:"Âmes sœurs (l'une est inerte)"}
+  ];
+  const ACHIEVEMENTS = {
+    adopt:   {emo:"🪨", t:"Responsabilité minérale", d:"Vous êtes l'heureux propriétaire d'un caillou."},
+    pet1:    {emo:"🫳", t:"Premier contact", d:"Vous avez caressé un caillou. Volontairement."},
+    pet25:   {emo:"💗", t:"Tendre cailloutier", d:"25 caresses. Le caillou n'a pas bougé. Le cœur, si."},
+    pet100:  {emo:"🌟", t:"Main de velours", d:"100 caresses. Toujours un caillou. Toujours là."},
+    talk1:   {emo:"💬", t:"Dialogue de sourds", d:"Vous parlez à un caillou. Il vous écoute. C'est déjà ça."},
+    talk10:  {emo:"🤫", t:"Confident", d:"Il connaît tous vos secrets. Il ne dira rien. Jamais."},
+    feed1:   {emo:"🍽️", t:"Bon appétit", d:"Vous avez nourri un caillou. C'est l'intention qui compte."},
+    wash1:   {emo:"🫧", t:"Comme un sou neuf", d:"Caillou lavé. Caillou heureux. Caillou mouillé."},
+    trick1:  {emo:"🎓", t:"Bon caillou !", d:"Vous lui avez appris à rester immobile. Quel talent."},
+    bonheurMax:{emo:"☀️", t:"Plénitude", d:"Bonheur au maximum. Il rayonne (métaphoriquement)."},
+    bff:     {emo:"🤝", t:"Meilleurs amis", d:"Vous et un caillou. Contre le monde entier."},
+    time5:   {emo:"⏳", t:"L'épreuve du temps", d:"5 minutes ensemble. Sur 4,5 milliards d'années. Bon début."}
+  };
+
+  // ---------- screen flow ----------
+  function showGame(){
+    adoptScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    petName.textContent = state.name;
+    refreshAll();
+  }
+  function adopt(){
+    const n=(nameField.value||"").trim();
+    state.name = n || "Caillou";
+    state.adoptedAt = Date.now();
+    audio(); // gesture -> unlock sound
+    snd.sparkle();
+    unlock('adopt');
+    save();
+    showGame();
+    setTimeout(()=>say("…", 1400), 450);
+    setTimeout(()=>say("oh. salut. on va passer un million d'années ensemble.", 3200), 1900);
+  }
+
+  // ---------- helpers ----------
+  function clamp(v){ return Math.max(0,Math.min(100,v)); }
+  function fr(n){ return n.toLocaleString('fr-FR'); }
+
+  function levelOf(bond){
+    let lv=0; for(let i=0;i<LEVELS.length;i++){ if(bond>=LEVELS[i].min) lv=i; } return lv;
+  }
+  function lienPct(){
+    const lv=levelOf(state.bond);
+    const cur=LEVELS[lv].min;
+    const next=(lv+1<LEVELS.length)?LEVELS[lv+1].min:cur;
+    if(next===cur) return 100;
+    return Math.round(((state.bond-cur)/(next-cur))*100);
+  }
+
+  function refreshStats(){
+    fBonheur.style.width=state.bonheur+'%'; vBonheur.textContent=Math.round(state.bonheur)+'%';
+    fProprete.style.width=state.proprete+'%'; vProprete.textContent=Math.round(state.proprete)+'%';
+    const lp=lienPct(); fLien.style.width=lp+'%'; vLien.textContent=lp+'%';
+    const lv=levelOf(state.bond);
+    lvlText.textContent = lv+" · "+LEVELS[lv].title;
+  }
+  function refreshSprout(){
+    const lv=levelOf(state.bond);
+    sprout.style.opacity = lv>=1 ? 1 : 0;
+    spLeafL.setAttribute('opacity', lv>=1?1:0);
+    spLeafR.setAttribute('opacity', lv>=2?1:0);
+    spBud.setAttribute('opacity', (lv>=3 && lv<4)?1:0);
+    spFlower.setAttribute('opacity', lv>=4?1:0);
+  }
+  function refreshAll(){ refreshStats(); refreshSprout(); updateMood(); }
+
+  // ---------- face / mood ----------
+  let currentMood='neutral';
+  function setEyes(which){
+    eyesOpen.style.display = which==='open' ? '' : 'none';
+    eyesHappy.style.display = which==='happy' ? '' : 'none';
+    eyesClosed.style.display = which==='closed' ? '' : 'none';
+  }
+  function setMood(m){
+    currentMood=m;
+    // defaults
+    cheeks.setAttribute('opacity','0');
+    brows.setAttribute('opacity','0');
+    mouth.style.display=''; mouthO.style.display='none';
+    if(m==='happy'){
+      setEyes('happy'); cheeks.setAttribute('opacity','1');
+      mouth.setAttribute('d','M132,174 Q150,192 168,174');
+    } else if(m==='content'){
+      setEyes('open'); mouth.setAttribute('d','M138,177 Q150,185 162,177');
+    } else if(m==='eating'){
+      setEyes('open'); mouth.style.display='none'; mouthO.style.display='';
+    } else if(m==='clean'){
+      setEyes('happy'); mouth.setAttribute('d','M136,176 Q150,188 164,176');
+    } else if(m==='sleepy'){
+      setEyes('closed'); mouth.setAttribute('d','M144,181 Q150,184 156,181');
+    } else if(m==='sulk'){
+      setEyes('open'); brows.setAttribute('opacity','1');
+      mouth.setAttribute('d','M136,183 Q150,174 164,183');
+    } else if(m==='surprised'){
+      setEyes('open'); mouth.style.display='none'; mouthO.style.display='';
+      mouthO.setAttribute('ry','8'); mouthO.setAttribute('rx','7');
+    } else { // neutral
+      setEyes('open'); mouth.setAttribute('d','M138,178 Q150,182 162,178');
+    }
+  }
+  function updateMood(){
+    if(actionLock) return;
+    if(state.bonheur<25){ setMood('sulk'); return; }
+    if(state.bonheur>82 && state.proprete>65){ setMood('happy'); return; }
+    if(state.bonheur>60){ setMood('content'); return; }
+    setMood('neutral');
+  }
+
+  // blink loop (toggle closed eyes briefly, restore mood eyes)
+  function scheduleBlink(){
+    const wait = 2200 + Math.random()*3500;
+    setTimeout(()=>{
+      if(currentMood!=='sleepy' && !actionLock && eyesClosed.style.display==='none'){
+        const before = currentMood;
+        setEyes('closed');
+        setTimeout(()=>{ if(currentMood===before) setMood(before); }, 130);
+      }
+      scheduleBlink();
+    }, wait);
+  }
+  if(!reduceMotion) scheduleBlink();
+
+  // breathe + idle sway via JS transform (subtle), so wiggle can layer on top
+  let t0=performance.now();
+  function idleLoop(now){
+    const t=(now-t0)/1000;
+    if(!reduceMotion && !wiggling){
+      const s=1+Math.sin(t*1.1)*0.012;
+      const ty=Math.sin(t*1.1)*1.2;
+      rockEl.setAttribute('transform', `translate(0 ${ty.toFixed(2)}) scale(${s.toFixed(4)})`);
+      // shadow breathes inversely
+      const sr=100+Math.sin(t*1.1)*2;
+      groundShadow.setAttribute('rx', sr.toFixed(1));
+    }
+    requestAnimationFrame(idleLoop);
+  }
+  requestAnimationFrame(idleLoop);
+
+  // wiggle / hop reactions
+  let wiggling=false;
+  function react(kind){
+    if(reduceMotion){ return; }
+    wiggling=true;
+    const anim = rockEl.animate(
+      kind==='hop'
+      ? [{transform:'translateY(0)'},{transform:'translateY(-14px)'},{transform:'translateY(0)'}]
+      : [{transform:'rotate(0deg)'},{transform:'rotate(-4deg)'},{transform:'rotate(4deg)'},{transform:'rotate(0deg)'}],
+      {duration: kind==='hop'?420:380, easing:'ease-in-out'}
+    );
+    anim.onfinish=()=>{ wiggling=false; };
+  }
+
+  // ---------- thought bubble ----------
+  let bubbleTimer=null;
+  function say(text, holdMs){
+    bubble.textContent=text;
+    bubble.classList.add('show');
+    clearTimeout(bubbleTimer);
+    if(holdMs!==0){
+      bubbleTimer=setTimeout(()=>bubble.classList.remove('show'), holdMs||2600);
+    }
+  }
+
+  // ---------- particles ----------
+  const ctx = canvas.getContext('2d');
+  let parts=[];
+  function sizeCanvas(){
+    const r=canvas.getBoundingClientRect();
+    canvas.width=Math.max(1,Math.floor(r.width*devicePixelRatio));
+    canvas.height=Math.max(1,Math.floor(r.height*devicePixelRatio));
+  }
+  sizeCanvas(); window.addEventListener('resize', sizeCanvas);
+
+  function center(){ return {x:canvas.width*0.5, y:canvas.height*0.5}; }
+  function spawn(type, n){
+    if(reduceMotion) return;
+    const c=center();
+    for(let i=0;i<n;i++){
+      const a=Math.random()*Math.PI*2, sp=(0.6+Math.random()*1.6)*devicePixelRatio;
+      let p={ x:c.x+(Math.random()-0.5)*60*devicePixelRatio,
+              y:c.y+(Math.random()-0.5)*30*devicePixelRatio,
+              vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-1.2*devicePixelRatio,
+              g:0.06*devicePixelRatio, life:1, fade:0.012+Math.random()*0.01,
+              type, r:(2+Math.random()*3)*devicePixelRatio, rot:Math.random()*6 };
+      if(type==='bubble'){ p.vy=-(0.8+Math.random()*1.4)*devicePixelRatio; p.g=-0.01*devicePixelRatio; p.r=(2.5+Math.random()*4)*devicePixelRatio; p.fade=0.012;}
+      if(type==='crumb'){ p.vy=(0.4+Math.random()*1)*devicePixelRatio; p.g=0.12*devicePixelRatio; }
+      if(type==='heart'){ p.vy=-(1+Math.random()*1.3)*devicePixelRatio; p.g=0.03*devicePixelRatio; p.r=(5+Math.random()*4)*devicePixelRatio; p.fade=0.014;}
+      if(type==='spark'){ p.vy=(Math.random()-0.5)*2*devicePixelRatio; p.vx=(Math.random()-0.5)*3*devicePixelRatio; p.g=0.02*devicePixelRatio; p.r=(1.5+Math.random()*2.5)*devicePixelRatio; p.fade=0.02;}
+      parts.push(p);
+    }
+  }
+  function drawHeart(x,y,r,alpha){
+    ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle='#D86C7E'; ctx.translate(x,y); ctx.scale(r/10,r/10);
+    ctx.beginPath();
+    ctx.moveTo(0,3); ctx.bezierCurveTo(0,-2,-6,-2,-6,2); ctx.bezierCurveTo(-6,6,0,9,0,11);
+    ctx.bezierCurveTo(0,9,6,6,6,2); ctx.bezierCurveTo(6,-2,0,-2,0,3); ctx.fill(); ctx.restore();
+  }
+  function fxLoop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=parts.length-1;i>=0;i--){
+      const p=parts[i];
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.life-=p.fade;
+      if(p.life<=0){ parts.splice(i,1); continue; }
+      if(p.type==='heart'){ drawHeart(p.x,p.y,p.r,p.life); continue; }
+      ctx.globalAlpha=p.life;
+      if(p.type==='bubble'){
+        ctx.strokeStyle='rgba(120,190,220,0.9)'; ctx.lineWidth=1.4*devicePixelRatio;
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.stroke();
+      } else if(p.type==='crumb'){
+        ctx.fillStyle='#8a7d5a'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+      } else if(p.type==='spark'){
+        ctx.fillStyle='#F2C75B'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+      } else { // dust
+        ctx.fillStyle='rgba(150,140,120,0.8)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
+      }
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(fxLoop);
+  }
+  requestAnimationFrame(fxLoop);
+
+  // ---------- actions ----------
+  let actionLock=false;
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function addBond(n){
+    const before=levelOf(state.bond);
+    state.bond+=n;
+    const after=levelOf(state.bond);
+    if(after>before){
+      refreshSprout();
+      snd.level();
+      const lvl=LEVELS[after];
+      toast('🌱', "Niveau "+after, "Votre lien grandit : "+lvl.title+".");
+      if(after>=4) unlock('bff');
+    }
+  }
+
+  function doAction(act){
+    audio();
+    if(act==='pet'){
+      state.pets++;
+      state.bonheur=clamp(state.bonheur+7);
+      addBond(1);
+      react('wiggle'); snd.pet(state.pets%6);
+      spawn('dust',7); spawn('heart',2);
+      actFace('happy', 900);
+      if(state.pets%3===1) say(pick(REACT.pet), 1500);
+      if(state.pets===1) unlock('pet1');
+      if(state.pets===25) unlock('pet25');
+      if(state.pets===100) unlock('pet100');
+    }
+    else if(act==='feed'){
+      state.feeds++;
+      state.bonheur=clamp(state.bonheur+9);
+      addBond(1);
+      snd.feed(); spawn('crumb',9);
+      actFace('eating', 1100);
+      say(pick(REACT.feed), 1700);
+      if(state.feeds===1) unlock('feed1');
+    }
+    else if(act==='wash'){
+      state.washes++;
+      state.proprete=100;
+      state.bonheur=clamp(state.bonheur+5);
+      addBond(1);
+      snd.wash(); spawn('bubble',16);
+      actFace('clean', 1200);
+      say(pick(REACT.wash), 1700);
+      if(state.washes===1) unlock('wash1');
+    }
+    else if(act==='talk'){
+      state.talks++;
+      state.bonheur=clamp(state.bonheur+5);
+      addBond(1);
+      snd.talk();
+      const line = state.talks===1 ? "oh. tu me parles. personne fait jamais ça." : pick(THOUGHTS);
+      actFace('content', 2600);
+      say(line, 3200);
+      if(state.talks===1) unlock('talk1');
+      if(state.talks===10) unlock('talk10');
+    }
+    else if(act==='trick'){
+      state.tricks++;
+      const tr=pick(TRICKS);
+      actionLock=true;
+      setMood('surprised');
+      say(tr.cmd, 0);
+      react('hop'); snd.talk();
+      setTimeout(()=>{
+        say(tr.ok, 2600);
+        setMood('happy'); snd.sparkle(); spawn('spark',14);
+        state.bonheur=clamp(state.bonheur+8); addBond(2);
+        if(state.tricks===1) unlock('trick1');
+        refreshStats();
+        setTimeout(()=>{ actionLock=false; updateMood(); }, 900);
+        save();
+      }, 1150);
+      refreshStats(); save();
+      return;
+    }
+    if(state.bonheur>=100) unlock('bonheurMax');
+    refreshStats(); save();
+  }
+
+  // temporarily force a face for an action, then release
+  function actFace(mood, ms){
+    actionLock=true;
+    setMood(mood);
+    setTimeout(()=>{ actionLock=false; updateMood(); }, ms);
+  }
+
+  // ---------- achievements / toasts ----------
+  function unlock(id){
+    if(state.achievements.indexOf(id)!==-1) return;
+    const a=ACHIEVEMENTS[id]; if(!a) return;
+    state.achievements.push(id); save();
+    toast(a.emo, "Succès — "+a.t, a.d);
+    if(id!=='adopt') snd.sparkle();
+  }
+  function toast(emo, title, desc){
+    const el=document.createElement('div');
+    el.className='toast';
+    el.innerHTML='<div class="tEmo"></div><div><div class="tT"></div><div class="tD"></div></div>';
+    el.querySelector('.tEmo').textContent=emo;
+    el.querySelector('.tT').textContent=title;
+    el.querySelector('.tD').textContent=desc;
+    toasts.appendChild(el);
+    requestAnimationFrame(()=>el.classList.add('show'));
+    setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); }, 4200);
+  }
+
+  // ---------- time / decay ----------
+  function fmtSince(){
+    const ms=Date.now()-state.adoptedAt;
+    let s=Math.floor(ms/1000);
+    const d=Math.floor(s/86400); s-=d*86400;
+    const h=Math.floor(s/3600); s-=h*3600;
+    const m=Math.floor(s/60); s-=m*60;
+    const pad=n=>String(n).padStart(2,'0');
+    return `${d} j ${pad(h)} h ${pad(m)} min ${pad(s)} s`;
+  }
+  setInterval(()=>{ if(gameScreen.classList.contains('active')) ageMain.textContent=fmtSince(); }, 1000);
+
+  // gentle decay so there's a real (slow) loop
+  setInterval(()=>{
+    if(!gameScreen.classList.contains('active')) return;
+    state.bonheur=clamp(state.bonheur-1);
+    state.proprete=clamp(state.proprete-1);
+    refreshStats(); updateMood(); save();
+  }, 9000);
+
+  // occasional idle thought
+  setInterval(()=>{
+    if(!gameScreen.classList.contains('active')||actionLock) return;
+    if(Math.random()<0.5){
+      const line = state.bonheur<25 ? "je boude. enfin, autant qu'un caillou peut bouder." : pick(THOUGHTS);
+      say(line, 3200);
+    }
+  }, 16000);
+
+  // 5-minute achievement
+  setInterval(()=>{
+    if(gameScreen.classList.contains('active') && Date.now()-state.adoptedAt>=300000) unlock('time5');
+  }, 5000);
+
+  // ---------- events ----------
+  adoptBtn.addEventListener('click', adopt);
+  nameField.addEventListener('keydown', e=>{ if(e.key==='Enter') adopt(); });
+
+  document.querySelectorAll('.act').forEach(b=>{
+    b.addEventListener('click', ()=>doAction(b.dataset.act));
+  });
+
+  soundBtn.addEventListener('click', ()=>{
+    state.muted=!state.muted; save();
+    soundBtn.textContent=state.muted?'🔇':'🔊';
+    if(!state.muted){ audio(); snd.pet(0); }
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    const ok=confirm("Abandonner "+state.name+" ?\n\nIl ne comprendra pas pourquoi. Il attendra. Longtemps. (Ceci efface votre caillou.)");
+    if(!ok) return;
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    location.reload();
+  });
+
+  // rename flow
+  function openRename(){
+    renameInput.value=state.name;
+    petName.style.display='none'; renameBtn.style.display='none';
+    renameInput.style.display='inline-block'; renameInput.focus(); renameInput.select();
+  }
+  function closeRename(commit){
+    if(commit){
+      const n=(renameInput.value||"").trim();
+      if(n){ state.name=n; petName.textContent=n; save(); }
+    }
+    renameInput.style.display='none';
+    petName.style.display=''; renameBtn.style.display='';
+  }
+  renameBtn.addEventListener('click', openRename);
+  petName.addEventListener('click', openRename);
+  renameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') closeRename(true); if(e.key==='Escape') closeRename(false); });
+  renameInput.addEventListener('blur', ()=>closeRename(true));
+
+  // ---------- boot ----------
+  if(load()){
+    soundBtn.textContent=state.muted?'🔇':'🔊';
+    showGame();
+  } else {
+    nameField.focus();
+  }
+})();
+</script>
+</body>
+</html>

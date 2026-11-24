@@ -5,7 +5,7 @@ pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp cailloutchi.html public/index.html   # le caillou s'affiche à la racine de l'URL
+    - cp index.html public/index.html   # le caillou s'affiche à la racine de l'URL
   artifacts:
     paths:
       - public

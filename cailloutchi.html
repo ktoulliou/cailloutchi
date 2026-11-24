@@ -3,30 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cailloutchi — le compagnon minéral</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>Cailloutchi — Empire Minéral</title>
+<meta name="description" content="Cailloutchi : adoptez un caillou, extrayez des pépites, forgez des diamants. Un jeu d'élevage minéral gratuit, convivial et open source.">
+<meta name="theme-color" content="#F6EBDD">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:title" content="Cailloutchi — Élevage minéral">
+<meta property="og:description" content="Adoptez un caillou, extrayez des pépites, forgez des diamants. Gratuit et open source.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🪨%3C/text%3E%3C/svg%3E">
 <style>
+  /* Polices auto-hébergées (licence OFL) : aucun appel à Google, conforme RGPD */
+  @font-face{font-family:"Fredoka";font-style:normal;font-weight:300 700;font-display:swap;src:url("fonts/fredoka-latin-wght-normal.woff2") format("woff2");}
+  @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("fonts/inter-latin-wght-normal.woff2") format("woff2");}
+  @font-face{font-family:"Space Mono";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/space-mono-latin-400-normal.woff2") format("woff2");}
+  @font-face{font-family:"Space Mono";font-style:normal;font-weight:700;font-display:swap;src:url("fonts/space-mono-latin-700-normal.woff2") format("woff2");}
   :root{
-    /* Palette: pierre tiède au crépuscule. Une seule audace : l'argile (clay). */
     --sky-top:#E7E1EC;
     --sky-bottom:#F6EBDD;
     --glow:#FBE9C9;
     --ink:#2E2722;
-    --muted:#857A6E;
+    --muted:#6F655B;
     --card:#FBF6EF;
-    --card-line:#EBE0D2;
-    --clay:#C56B57;       /* accent principal, parcimonieux */
-    --clay-deep:#A8533F;
+    --card-line:#E3D6C5;
+    --clay:#B05A46;
+    --clay-deep:#8F4534;
     --honey:#E0A95E;
+    --gold:#C88A2E;
     --sage:#8FA17B;
-    --sage-deep:#6E8159;
+    --sage-deep:#5F724B;
     --stone-hi:#A39888;
     --stone-mid:#7E7568;
     --stone-lo:#5E5650;
     --bar-track:#EDE3D5;
-    /* typo */
     --f-display:"Fredoka","Trebuchet MS",system-ui,sans-serif;
     --f-body:"Inter",system-ui,-apple-system,sans-serif;
     --f-mono:"Space Mono","SFMono-Regular",ui-monospace,monospace;
@@ -34,9 +42,8 @@
   }
 
   *{box-sizing:border-box;}
-  html,body{height:100%;}
+  html,body{min-height:100%;margin:0;}
   body{
-    margin:0;
     font-family:var(--f-body);
     color:var(--ink);
     background:
@@ -47,175 +54,1063 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:24px 16px;
+    padding:clamp(8px, 1.4svh, 18px) clamp(10px, 1.5vw, 18px) clamp(8px, 1.4svh, 18px) clamp(56px, 4.5vw, 72px);
     overflow-x:hidden;
+    overflow-y:auto;
     -webkit-font-smoothing:antialiased;
   }
 
-  /* soft drifting light, very subtle */
   .ambient{
     position:fixed; inset:-20vmax; z-index:0; pointer-events:none;
     background:radial-gradient(38vmax 38vmax at 30% 20%, rgba(251,233,201,.55), transparent 60%);
-    filter:blur(8px);
+    
     animation:drift 32s ease-in-out infinite alternate;
   }
   @keyframes drift{ from{transform:translate(-4%, -2%);} to{transform:translate(6%, 4%);} }
 
+  .left-shell{display:none;}
+  .left-shell.visible{display:block;}
+
+  .left-dock{
+    position:fixed;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:26;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    padding:7px 6px;
+    background:rgba(251,246,239,.94);
+    border:1px solid var(--card-line);
+    border-radius:18px;
+    box-shadow:0 14px 30px -16px rgba(60,46,34,.45);
+    backdrop-filter:blur(6px);
+  }
+  .dock-btn{
+    position:relative;
+    appearance:none;
+    border:1px solid var(--card-line);
+    background:#fff;
+    color:var(--ink);
+    width:38px;
+    height:38px;
+    border-radius:12px;
+    cursor:pointer;
+    display:grid;
+    place-items:center;
+    padding:0;
+    transition:background .14s ease, border-color .14s ease, box-shadow .14s ease;
+  }
+  .dock-btn:hover{background:#FFF8EE;border-color:#D8C3AA;}
+  .dock-btn.active{
+    background:var(--clay);
+    border-color:var(--clay-deep);
+    box-shadow:0 8px 16px -8px rgba(168,83,63,.7);
+  }
+  .dock-btn svg{width:19px;height:19px;display:block;}
+  .dock-btn.active svg{stroke:#fff;color:#fff;}
+
+  .dock-badge{
+    position:absolute;
+    top:-4px;
+    right:-4px;
+    min-width:15px;
+    height:15px;
+    padding:0 3px;
+    border-radius:999px;
+    background:var(--clay-deep);
+    color:#fff;
+    border:1.5px solid #fff;
+    font:700 9px/1 var(--f-mono);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 10px rgba(168,83,63,.55);
+    animation:badgePulse 1.3s ease-in-out infinite alternate;
+  }
+  .dock-badge.visible{display:inline-flex;}
+  @keyframes badgePulse{
+    from{transform:scale(1);}
+    to{transform:scale(1.15);}
+  }
+
+  .dock-drawer{
+    display:none;
+    position:fixed;
+    left:68px;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:25;
+    width:min(330px, calc(100vw - 82px));
+    max-height:84svh;
+    overflow-y:auto;
+    background:linear-gradient(180deg,#FFFDF9,var(--card));
+    border:1px solid var(--card-line);
+    border-radius:18px;
+    padding:12px;
+    box-shadow:0 18px 40px -18px rgba(60,46,34,.55);
+  }
+  .dock-drawer.open{display:block;}
+  .drawer-panel{display:none;}
+  .drawer-panel.active{display:block;}
+  .drawer-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding-bottom:7px;
+    margin-bottom:8px;
+    border-bottom:1px solid var(--card-line);
+    font:700 10px var(--f-mono);
+    letter-spacing:.45px;
+    color:var(--muted);
+  }
+  .drawer-close{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:var(--muted);
+    font:700 14px var(--f-mono);
+    cursor:pointer;
+    padding:0 4px;
+    line-height:1;
+  }
+  .drawer-close:hover{color:var(--ink);}
+
+  .rules-list{display:flex;flex-direction:column;gap:7px;}
+  .rule-block{
+    background:#fff;
+    border:1px solid var(--card-line);
+    border-radius:10px;
+    padding:7px 9px;
+  }
+  .rule-title{font:700 10.5px var(--f-display);color:var(--ink);margin-bottom:2px;}
+  .rule-text{font-size:9.8px;line-height:1.35;color:var(--muted);}
+
   .stage{
-    position:relative; z-index:1;
-    width:100%; max-width:560px;
+    position:relative;
+    z-index:10;
+    width:min(540px, 100%);
+    max-width:540px;
+    margin:auto;
+  }
+  .stage .card{width:100%;min-width:0;position:relative;z-index:10;}
+
+  .right-panel{
+    display:none;
+    position:fixed;
+    left:calc(50% + min(540px, 100%) / 2);
+    top:50%;
+    transform:translate(-50%, -50%);
+    z-index:30;
+    width:min(324px, calc(100vw - 32px));
+    max-height:86svh;
+    overflow-y:auto;
+    background:linear-gradient(180deg,#FFFDF9,var(--card));
+    border:1px solid var(--card-line);
+    border-radius:22px;
+    box-shadow:0 20px 44px -18px rgba(46,39,34,.55);
+    padding:15px;
+  }
+  .right-panel.open{
+    display:block;
+    animation:panelSlide .22s ease both;
+  }
+  @keyframes panelSlide{
+    from{opacity:0;transform:translate(-50%, calc(-50% + 10px));}
+    to{opacity:1;transform:translate(-50%, -50%);}
+  }
+  .rp-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding-bottom:8px;
+    margin-bottom:10px;
+    border-bottom:1px solid var(--card-line);
+    font:700 10px var(--f-mono);
+    letter-spacing:.4px;
+    color:var(--clay);
+  }
+  .rp-close{
+    appearance:none;
+    border:0;
+    background:transparent;
+    color:var(--muted);
+    font:700 15px var(--f-mono);
+    cursor:pointer;
+    line-height:1;
+    padding:0 4px;
+  }
+  .rp-close:hover{color:var(--ink);}
+  .rp-title{
+    margin:0 0 4px;
+    font:700 16px var(--f-display);
+    color:var(--ink);
+  }
+  .rp-sub{
+    margin:0 0 10px;
+    font-size:11.5px;
+    line-height:1.35;
+    color:var(--muted);
+  }
+  .mg-box{
+    background:#fff;
+    border:1px solid var(--card-line);
+    border-radius:14px;
+    padding:12px;
+    text-align:center;
+  }
+  .mg-tag-badge{
+    display:inline-block;
+    font:700 10px var(--f-mono);
+    color:var(--clay-deep);
+    background:#FDF2EE;
+    border:1px solid #EBD0C8;
+    border-radius:999px;
+    padding:3px 8px;
+    margin-bottom:8px;
+  }
+  .mg-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+    margin-top:8px;
+  }
+  .mg-btn{
+    appearance:none;
+    border:1px solid var(--card-line);
+    background:#FFFDF9;
+    color:var(--ink);
+    border-radius:11px;
+    padding:11px 6px;
+    font:700 13px var(--f-display);
+    cursor:pointer;
+    transition:background .12s, border-color .12s, transform .1s;
+  }
+  .mg-btn:hover:not(:disabled){
+    background:#FFF3E0;
+    border-color:var(--honey);
+  }
+  .mg-btn.gold-hit{
+    background:#FDF0C4;
+    border-color:var(--gold);
+    color:#694409;
+  }
+  .mg-btn.empty-tile{
+    background:#F4EFE8;
+    border-color:#DDD2C2;
+    color:var(--muted);
+  }
+  .mg-btn.picked-good{
+    background:#E4F1D8;
+    border-color:var(--sage-deep);
+    color:var(--sage-deep);
+  }
+  .mg-btn.picked-bad{
+    background:#FBE3DF;
+    border-color:var(--clay-deep);
+    color:var(--clay-deep);
+  }
+  .mg-status{
+    margin-top:10px;
+    font:600 11.5px var(--f-body);
+    line-height:1.35;
+    color:var(--ink);
+  }
+  .mg-bar-track{
+    width:100%;
+    height:18px;
+    background:var(--bar-track);
+    border-radius:999px;
+    overflow:hidden;
+    position:relative;
+    margin:10px 0;
+  }
+  .mg-bar-zone{
+    position:absolute;
+    top:0; bottom:0;
+    left:38%; width:24%;
+    background:rgba(143,161,123,.45);
+    border-left:2px solid var(--sage-deep);
+    border-right:2px solid var(--sage-deep);
+  }
+  .mg-bar-cursor{
+    position:absolute;
+    top:1px; bottom:1px;
+    width:8px;
+    margin-left:-4px;
+    border-radius:999px;
+    background:var(--clay-deep);
+  }
+  .mg-warn-actions{
+    display:flex;
+    gap:7px;
+    justify-content:center;
+    margin-top:10px;
+  }
+  .mg-choice-list{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    margin-top:8px;
+  }
+  .mg-choice-btn{
+    appearance:none;
+    width:100%;
+    padding:9px 12px;
+    border-radius:11px;
+    border:1px solid var(--card-line);
+    background:#FFFDF9;
+    color:var(--ink);
+    font:600 12.5px var(--f-display);
+    cursor:pointer;
+    text-align:center;
+    transition:background .12s, border-color .12s, transform .1s;
+  }
+  .mg-choice-btn:hover:not(:disabled){
+    background:#FFF3E0;
+    border-color:var(--honey);
+  }
+  .mg-choice-btn.picked-good{
+    background:#E4F1D8;
+    border-color:var(--sage-deep);
+    color:var(--sage-deep);
+  }
+  .mg-choice-btn.picked-bad{
+    background:#FBE3DF;
+    border-color:var(--clay-deep);
+    color:var(--clay-deep);
+  }
+
+  .hover-tooltip{
+    position:fixed;
+    z-index:65;
+    pointer-events:none;
+    max-width:260px;
+    background:var(--ink);
+    color:#FBF6EF;
+    border:1px solid rgba(251,246,239,.18);
+    border-radius:11px;
+    padding:7px 10px;
+    font:500 11px/1.35 var(--f-body);
+    box-shadow:0 14px 28px -12px rgba(0,0,0,.55);
+    opacity:0;
+    transform:translate(-50%, 4px);
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .hover-tooltip.show{
+    opacity:1;
+    transform:translate(-50%, 0);
+  }
+
+  .transmute-flash{
+    position:fixed;
+    inset:0;
+    z-index:45;
+    pointer-events:none;
+    opacity:0;
+    background:radial-gradient(circle at 50% 48%, rgba(255,244,196,.92) 0%, rgba(224,169,94,.42) 38%, rgba(122,98,196,.12) 68%, transparent 85%);
+  }
+  .transmute-flash.active{animation:transmuteFlashAnim 1.15s cubic-bezier(.16,.88,.32,1) forwards;}
+  @keyframes transmuteFlashAnim{
+    0%{opacity:0;transform:scale(.92);}
+    22%{opacity:1;transform:scale(1.03);}
+    65%{opacity:.65;transform:scale(1.06);}
+    100%{opacity:0;transform:scale(1.08);}
+  }
+
+  .confirm-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:55;
+    background:rgba(46,39,34,.42);
+    backdrop-filter:blur(3px);
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .confirm-backdrop.open{display:flex;}
+  .confirm-modal{
+    width:min(360px, 100%);
+    background:linear-gradient(180deg,#FFFDF9,var(--card));
+    border:1px solid var(--card-line);
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 24px 50px -20px rgba(46,39,34,.65);
+    text-align:center;
+  }
+  .confirm-modal h2{
+    margin:0 0 6px;
+    font:700 18px var(--f-display);
+    color:var(--ink);
+  }
+  .confirm-modal p{
+    margin:0 0 14px;
+    font-size:13px;
+    line-height:1.4;
+    color:var(--muted);
+  }
+  .confirm-actions{
+    display:flex;
+    gap:8px;
+    justify-content:center;
+  }
+  .confirm-btn{
+    appearance:none;
+    border:1px solid var(--card-line);
+    border-radius:12px;
+    padding:9px 14px;
+    font:600 13px var(--f-display);
+    cursor:pointer;
+    background:#fff;
+    color:var(--ink);
+  }
+  .confirm-btn:hover{background:#FFF8EE;}
+  .confirm-btn.danger{
+    border-color:transparent;
+    background:var(--clay);
+    color:#fff;
+  }
+  .confirm-btn.danger:hover{background:var(--clay-deep);}
+
+  .tycoon-bar{
+    position:relative;
+    z-index:3;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:clamp(5px, 0.7vw, 8px);
+    margin:clamp(6px, 0.9svh, 10px) 0 clamp(6px, 0.8svh, 8px);
+    padding:clamp(6px, 0.8svh, 9px) clamp(7px, 0.9vw, 10px);
+    background:#fff;
+    border:1px solid var(--card-line);
+    border-radius:14px;
+  }
+  .tycoon-bar.has-diamonds{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .tycoon-bar.has-transmutations{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .tycoon-kpi{min-width:0;text-align:center;}
+  .tycoon-kpi .k-label{
+    display:block;
+    font:700 clamp(8px, 0.72vw, 9.5px) var(--f-mono);
+    letter-spacing:.35px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .tycoon-kpi .k-val{
+    display:block;
+    font:700 clamp(12px, 1.15vw, 15px) var(--f-display);
+    color:var(--ink);
+    margin-top:1px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tycoon-kpi .k-sub{
+    display:block;
+    font:clamp(8.5px, 0.7vw, 10px) var(--f-mono);
+    color:var(--sage-deep);
+    margin-top:1px;
+  }
+
+  .gift-btn{
+    position:absolute;
+    right:10px;
+    bottom:8px;
+    z-index:7;
+    appearance:none;
+    border:1.5px solid #E5B95C;
+    background:linear-gradient(180deg,#FFF8E6,#FBE4A8);
+    color:#5C3D0C;
+    font:700 11px var(--f-display);
+    padding:6px 10px;
+    border-radius:999px;
+    cursor:pointer;
+    box-shadow:0 8px 20px -8px rgba(130,85,15,.55);
+    animation:pulseGift 1.4s ease-in-out infinite alternate;
+  }
+  .gift-btn.dirt{
+    border-color:#B59A7A;
+    background:linear-gradient(180deg,#EFE4D4,#D6C2A5);
+    color:#4A3825;
+  }
+  @keyframes pulseGift{from{transform:scale(1);}to{transform:scale(1.06);}}
+
+  .achievement-list{display:flex;flex-direction:column;gap:5px;margin:4px 0 0;}
+  .achievement-item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-width:0;
+    padding:5px 8px;
+    border-radius:9px;
+    background:#fff;
+    border:1px solid var(--card-line);
+    font-size:10.5px;
+    line-height:1.2;
+    color:var(--ink);
+  }
+  .achievement-item .achievement-emo{
+    flex:0 0 22px;
+    text-align:center;
+    font-size:14px;
+    line-height:1;
+  }
+  .achievement-item .achievement-meta{min-width:0;flex:1;overflow-wrap:anywhere;}
+  .achievement-item .achievement-title{display:block;font-weight:600;}
+  .achievement-item .achievement-desc{
+    display:block;
+    font-size:9.2px;
+    color:var(--muted);
+    margin-top:1px;
+  }
+  .achievement-item .achievement-badge{
+    flex:0 0 auto;
+    font:700 8.5px var(--f-mono);
+    padding:2px 5px;
+    border-radius:5px;
+    background:#F4ECE1;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+  .achievement-item.secret-locked .achievement-badge{background:#EFE8F6;color:#6A4C93;}
+  .achievement-item.unlocked{border-color:#C5D4B5;background:#F7FAF3;color:var(--sage-deep);}
+  .achievement-item.unlocked .achievement-badge{background:#E2EED5;color:var(--sage-deep);}
+  .achievement-item.secret-unlocked .achievement-badge{background:#E8DFF5;color:#583B82;}
+  .achievement-item.locked{background:#FCF9F4;}
+
+  .fill.fatigue{background:linear-gradient(90deg,#E0A95E,#C56B57);}
+  .fill.resonance{background:linear-gradient(90deg,#B8A6E8,#7A62C4);}
+  .fill.balance{background:linear-gradient(90deg,#8EC5B6,#4A8C7A);}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+  .section-kicker{
+    font:700 8.5px var(--f-mono);
+    letter-spacing:.35px;
+    color:var(--clay);
+    margin:0 0 5px;
+  }
+
+  .shop-list{display:flex;flex-direction:column;gap:6px;}
+  .shop-item{
+    background:#fff;
+    border:1px solid var(--card-line);
+    border-radius:11px;
+    padding:7px 9px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .shop-top{
+    display:flex;align-items:center;justify-content:space-between;gap:6px;
+    font-size:11.5px;font-weight:600;line-height:1.2;
+  }
+  .shop-owned{
+    font:700 9px var(--f-mono);
+    color:var(--sage-deep);background:#F2F6EE;padding:2px 6px;border-radius:6px;flex:0 0 auto;
+  }
+  .shop-desc{font-size:9.8px;color:var(--muted);line-height:1.25;}
+  .shop-buy{
+    appearance:none;border:0;border-radius:8px;
+    padding:6px 8px;
+    background:var(--clay);color:#fff;
+    font:600 10.5px var(--f-display);
+    cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+    transition:background .15s, opacity .15s;
+  }
+  .shop-buy:hover:not(:disabled){background:var(--clay-deep);}
+  .shop-buy:disabled{opacity:.45;cursor:default;}
+
+  .prestige-box{
+    background:linear-gradient(180deg,#FFF9EC,#F8EED8);
+    border:1px solid #E4CFA4;
+    border-radius:11px;
+    padding:9px;
+  }
+  .prestige-box p{margin:0 0 7px;font-size:10px;line-height:1.32;color:#5D4A2E;}
+  .prestige-meta{font:700 9.5px var(--f-mono);color:#7A5A22;margin-bottom:5px;display:block;}
+  .prestige-btn{
+    width:100%;appearance:none;border:0;border-radius:8px;
+    padding:7px 8px;
+    background:var(--gold);color:#fff;
+    font:600 11px var(--f-display);cursor:pointer;
+  }
+  .prestige-btn:disabled{opacity:.45;cursor:default;}
+
+  .mission{
+    background:#fff;border:1px solid var(--card-line);border-radius:11px;
+    padding:8px;margin:5px 0;
+  }
+  .mission-top{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;font-weight:600;line-height:1.2;}
+  .mission-title-wrap{display:flex;align-items:center;gap:6px;min-width:0;}
+  .mission-top .mission-emo{font-size:13px;flex:0 0 auto;}
+  .mission-tier{
+    font:700 8.5px var(--f-mono);
+    padding:1px 5px;
+    border-radius:5px;
+    background:#F4ECE1;
+    color:var(--muted);
+    flex:0 0 auto;
+    text-transform:uppercase;
+  }
+  .mission-tier.hard{background:#FBE8E4;color:var(--clay-deep);}
+  .mission-tier.med{background:#FDF3DF;color:#8E621C;}
+  .mission-desc{margin:3px 0 5px 19px;font-size:10px;color:var(--muted);line-height:1.25;}
+  .mission-track{height:5.5px;background:var(--bar-track);border-radius:99px;overflow:hidden;}
+  .mission-fill{height:100%;width:0;background:linear-gradient(90deg,var(--sage),var(--sage-deep));border-radius:99px;transition:width .25s;}
+  .mission-foot{
+    display:flex;justify-content:space-between;gap:6px;
+    margin-top:4px;
+    font:9px var(--f-mono);color:var(--muted);
+  }
+  .mission.done{border-color:#B8C9A5;background:#F8FAF4;}
+  .claim-btn{
+    width:100%;border:0;border-radius:9px;background:var(--sage-deep);color:#fff;
+    font:600 11.5px var(--f-display);padding:7px;margin-top:6px;cursor:pointer;
+  }
+  .claim-btn:disabled{opacity:.45;cursor:default;}
+
+  .journal{display:flex;flex-direction:column;gap:6px;}
+  .journal-item{display:flex;gap:7px;align-items:flex-start;color:var(--muted);font-size:10.5px;line-height:1.25;}
+  .journal-icon{font-size:12.5px;flex:0 0 16px;text-align:center;}
+  .journal-item strong{display:block;color:var(--ink);font-size:10.8px;}
+  .side-empty{color:var(--muted);font-size:10.5px;margin:2px 0;}
+
+  @media(max-width:640px){
+    body{padding:10px 8px 24px 52px;}
+    .left-dock{left:6px;}
+    .dock-drawer{left:56px;}
+    .dock-btn{width:34px;height:34px;border-radius:10px;}
+    .right-panel{
+      left:52px;
+      right:8px;
+      width:auto;
+      top:50%;
+      bottom:auto;
+      transform:translateY(-50%);
+    }
+    .right-panel.open{
+      animation:panelSlideMobile .22s ease both;
+    }
+    @keyframes panelSlideMobile{
+      from{opacity:0;transform:translateY(calc(-50% + 10px));}
+      to{opacity:1;transform:translateY(-50%);}
+    }
   }
 
   .card{
     position:relative;
     background:linear-gradient(180deg, #FFFDF9, var(--card));
     border:1px solid var(--card-line);
-    border-radius:32px;
+    border-radius:clamp(22px, 2.5vw, 30px);
     box-shadow:var(--shadow-soft);
-    padding:26px 26px 30px;
-    overflow:hidden;
+    padding:clamp(14px, 1.8svh, 22px) clamp(16px, 2vw, 24px) clamp(16px, 2svh, 24px);
+    overflow:visible;
   }
-  .card::before{ /* inner top sheen */
-    content:""; position:absolute; left:0; right:0; top:0; height:120px;
+  .card::before{
+    content:""; position:absolute; left:0; right:0; top:0; height:100px;
     background:linear-gradient(180deg, rgba(255,255,255,.7), transparent);
-    pointer-events:none;
+    pointer-events:none; border-radius:30px 30px 0 0;
   }
 
-  /* ---------- top bar ---------- */
-  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; position:relative; z-index:3;}
+  .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; position:relative; z-index:4;}
   .wordmark{ display:flex; align-items:center; gap:9px;}
-  .pebble-mark{ width:26px; height:20px; border-radius:50% 50% 48% 52%/60% 60% 40% 40%;
+  .pebble-mark{ width:24px; height:18px; border-radius:50% 50% 48% 52%/60% 60% 40% 40%;
     background:radial-gradient(circle at 35% 30%, var(--stone-hi), var(--stone-lo));
     box-shadow:inset 0 -3px 5px rgba(0,0,0,.25);}
-  .wordmark b{ font-family:var(--f-display); font-weight:600; font-size:18px; letter-spacing:.2px;}
-  .tools{ display:flex; gap:8px;}
+  .wordmark b{ font-family:var(--f-display); font-weight:600; font-size:clamp(15px, 1.4vw, 18px); letter-spacing:.2px;}
+  .tools{ display:flex; gap:7px;}
   .icon-btn{
     appearance:none; border:1px solid var(--card-line); background:#fff;
-    width:38px; height:38px; border-radius:12px; cursor:pointer; font-size:16px; line-height:1;
+    width:34px; height:34px; border-radius:11px; cursor:pointer; font-size:15px; line-height:1;
     color:var(--muted); transition:transform .12s ease, background .12s ease, color .12s;
     display:grid; place-items:center;
   }
   .icon-btn:hover{ background:#FFF8EE; color:var(--ink); transform:translateY(-1px);}
   .icon-btn:active{ transform:translateY(0) scale(.96);}
 
-  /* ---------- adopt screen ---------- */
-  .screen{ display:none; }
+  .screen{ display:none; position:relative; z-index:3; }
   .screen.active{ display:block; animation:fade .4s ease both;}
   @keyframes fade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
 
-  .adopt{ text-align:center; padding:18px 6px 6px;}
+  .adopt{ text-align:center; padding:12px 6px 4px;}
   .eyebrow{ font-family:var(--f-mono); font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:var(--clay); }
   .adopt h1{
     font-family:var(--f-display); font-weight:700;
-    font-size:clamp(30px,7vw,44px); line-height:1.02; margin:10px 0 6px;
+    font-size:clamp(28px,6vw,42px); line-height:1.02; margin:10px 0 6px;
   }
-  .adopt p.lede{ color:var(--muted); max-width:36ch; margin:0 auto 22px; line-height:1.55; font-size:15.5px;}
-  .adopt-rock{ width:min(280px,72vw); margin:6px auto 18px; display:block; }
+  .adopt p.lede{ color:var(--muted); max-width:36ch; margin:0 auto 16px; line-height:1.55; font-size:15px;}
+  .adopt-rock{ width:min(240px,68vw); margin:4px auto 14px; display:block; }
   .name-row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .field{
-    font-family:var(--f-body); font-size:17px; color:var(--ink);
+    font-family:var(--f-body); font-size:16px; color:var(--ink);
     border:1.5px solid var(--card-line); background:#fff; border-radius:14px;
-    padding:13px 16px; width:min(280px,70vw); outline:none; transition:border-color .15s, box-shadow .15s;
+    padding:12px 15px; width:min(270px,70vw); outline:none; transition:border-color .15s, box-shadow .15s;
   }
   .field:focus{ border-color:var(--clay); box-shadow:0 0 0 4px rgba(197,107,87,.14);}
   .btn{
     appearance:none; border:none; cursor:pointer; font-family:var(--f-display); font-weight:600;
-    font-size:16px; letter-spacing:.2px; color:#fff; background:var(--clay);
-    border-radius:14px; padding:13px 22px; transition:transform .12s, background .15s, box-shadow .15s;
+    font-size:14.5px; letter-spacing:.2px; color:#fff; background:var(--clay);
+    border-radius:14px; padding:11px 18px; transition:transform .12s, background .15s, box-shadow .15s;
     box-shadow:0 10px 22px -10px rgba(168,83,63,.7);
   }
   .btn:hover{ background:var(--clay-deep); transform:translateY(-1px);}
   .btn:active{ transform:translateY(0) scale(.98);}
-  .fine{ font-family:var(--f-mono); font-size:11px; color:var(--muted); margin-top:18px; letter-spacing:.3px;}
-
-  /* ---------- game screen ---------- */
-  .gamehead{ text-align:center; margin-top:14px;}
-  .name-line{ display:inline-flex; align-items:center; gap:8px; }
-  .pet-name{ font-family:var(--f-display); font-weight:600; font-size:clamp(24px,6vw,32px); line-height:1; }
-  .rename-input{ display:none; font-family:var(--f-display); font-weight:600; font-size:clamp(22px,6vw,30px);
-    text-align:center; border:none; border-bottom:2px dashed var(--clay); background:transparent; color:var(--ink); width:9ch; outline:none;}
-  .pencil{ font-size:13px; }
-  .readout{ font-family:var(--f-mono); font-size:14px; color:var(--ink); margin-top:7px; font-weight:700; letter-spacing:.5px;}
-  .readout .sub{ display:block; font-weight:400; font-size:11px; color:var(--muted); letter-spacing:.6px; margin-top:3px;}
-
-  /* arena: bubble + rock + fx */
-  .arena{ position:relative; height:clamp(250px,46vw,300px); margin:6px 0 4px; }
-  #fx{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:4; }
-  .rock-wrap{ position:absolute; inset:0; display:grid; place-items:center; z-index:2; }
-  .rock-svg{ width:min(300px,76vw); height:auto; overflow:visible; }
-
-  /* thought bubble */
-  .bubble{
-    position:absolute; left:50%; top:6px; transform:translateX(-50%) translateY(6px);
-    background:#fff; border:1px solid var(--card-line); color:var(--ink);
-    padding:11px 15px; border-radius:16px; font-size:14.5px; line-height:1.4; max-width:min(330px,82%);
-    text-align:center; box-shadow:0 12px 28px -16px rgba(60,46,34,.5);
-    opacity:0; transition:opacity .25s ease, transform .25s ease; z-index:6; pointer-events:none;
+  .btn.secondary{
+    background:#fff;
+    color:var(--ink);
+    border:1px solid var(--card-line);
+    box-shadow:none;
   }
-  .bubble::after{ content:""; position:absolute; left:50%; bottom:-7px; transform:translateX(-50%) rotate(45deg);
-    width:14px; height:14px; background:#fff; border-right:1px solid var(--card-line); border-bottom:1px solid var(--card-line);}
+  .btn.secondary:hover{background:#FFF8EE;}
+  .btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none;}
+  .fine{ font-family:var(--f-mono); font-size:11px; color:var(--muted); margin-top:14px; letter-spacing:.3px;}
+
+  .gamehead{ position:relative; z-index:4; text-align:center; margin-top:clamp(4px, 0.6svh, 8px);}
+  .name-line{ display:inline-flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; }
+  .pet-name{ font-family:var(--f-display); font-weight:600; font-size:clamp(21px, 2.3vw, 29px); line-height:1; }
+  .age-inline{ font-family:var(--f-mono); font-size:clamp(10.5px, 0.92vw, 12.5px); font-weight:700; color:var(--ink); letter-spacing:.3px; margin-left:4px;}
+  .readout{ font-family:var(--f-mono); font-size:clamp(9.5px, 0.8vw, 10.8px); color:var(--muted); margin-top:4px; font-weight:400; letter-spacing:.4px;}
+
+  .arena{
+    position:relative;
+    z-index:2;
+    isolation:isolate;
+    height:clamp(192px, 27svh, 244px);
+    margin:clamp(4px, 0.5svh, 8px) 0 clamp(10px, 1.2svh, 14px);
+    overflow:hidden;
+    border-radius:18px;
+  }
+  #fx{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:4; }
+  .rock-wrap{
+    position:absolute;
+    inset:0;
+    display:grid;
+    place-items:center;
+    padding:28px 8px 10px;
+    z-index:2;
+  }
+  .rock-svg{
+    width:min(168px, 44vw);
+    max-width:100%;
+    max-height:100%;
+    height:auto;
+    overflow:visible;
+  }
+
+  .cushion-pad{
+    display:none;
+    position:absolute;
+    left:50%;
+    bottom:10px;
+    transform:translateX(-50%);
+    width:154px;
+    height:26px;
+    border-radius:14px;
+    background:linear-gradient(180deg,#7BAEE0,#4A78AD);
+    border:1.5px solid #355C8A;
+    box-shadow:0 6px 14px -6px rgba(34,54,82,.45), inset 0 2px 3px rgba(255,255,255,.35);
+    z-index:1;
+    pointer-events:none;
+  }
+  .cushion-pad.active{display:block;}
+  .rock-wrap.has-cushion{padding-bottom:24px;}
+
+  .gear-props{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:5;
+  }
+  .prop-brush{
+    display:none;
+    position:absolute;
+    right:35%;
+    top:60%;
+    font-size:21px;
+    line-height:1;
+    animation:brushSide 1.25s ease-in-out infinite alternate;
+  }
+  .prop-brush.active{display:block;}
+  @keyframes brushSide{
+    from{transform:translateX(0) rotate(-12deg);}
+    to{transform:translateX(-5px) rotate(6deg);}
+  }
+
+  .prop-lamp{
+    display:none;
+    position:absolute;
+    left:45%;
+    top:16%;
+    width:50px;
+    height:86px;
+    background:linear-gradient(180deg, rgba(168,139,250,.38), rgba(168,139,250,0));
+    clip-path:polygon(35% 0%, 65% 0%, 100% 100%, 0% 100%);
+    animation:lampPulse 2.2s ease-in-out infinite alternate;
+  }
+  .prop-lamp.active{display:block;}
+  @keyframes lampPulse{
+    from{opacity:.5;}
+    to{opacity:1;}
+  }
+
+  .prop-drill{
+    display:none;
+    position:absolute;
+    left:36%;
+    top:62%;
+    font-size:20px;
+    line-height:1;
+    animation:drillVibe .18s linear infinite;
+  }
+  .prop-drill.active{display:block;}
+  @keyframes drillVibe{
+    0%{transform:translate(0,0) rotate(-6deg);}
+    50%{transform:translate(3px,-1px) rotate(4deg);}
+    100%{transform:translate(0,0) rotate(-6deg);}
+  }
+
+  .prop-lab{
+    display:none;
+    position:absolute;
+    right:7%;
+    top:18%;
+    font-size:19px;
+    line-height:1;
+    animation:labSpin 3.6s linear infinite;
+  }
+  .prop-lab.active{display:block;}
+  @keyframes labSpin{
+    from{transform:rotate(0deg);}
+    to{transform:rotate(360deg);}
+  }
+
+  .prop-museum{
+    display:none;
+    position:absolute;
+    left:50%;
+    bottom:3px;
+    transform:translateX(-50%);
+    padding:1px 8px;
+    border-radius:8px;
+    background:rgba(255,253,249,.88);
+    border:1px solid #D9C5A7;
+    font:700 9px var(--f-mono);
+    color:#5C4624;
+    letter-spacing:.4px;
+  }
+  .prop-museum.active{display:block;}
+
+  .bubble{
+    position:absolute;
+    left:50%;
+    top:6px;
+    transform:translateX(-50%) translateY(4px);
+    background:#fff;
+    border:1px solid var(--card-line);
+    color:var(--ink);
+    padding:clamp(4px, 0.55svh, 7px) clamp(9px, 1vw, 12px);
+    border-radius:12px;
+    font-size:clamp(10px, 0.88vw, 12px);
+    line-height:1.25;
+    max-width:min(320px, 88%);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
+    box-shadow:0 10px 22px -14px rgba(60,46,34,.5);
+    opacity:0;
+    transition:opacity .22s ease, transform .22s ease;
+    z-index:8;
+    pointer-events:none;
+  }
+  .bubble::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    bottom:-5px;
+    transform:translateX(-50%) rotate(45deg);
+    width:9px;
+    height:9px;
+    background:#fff;
+    border-right:1px solid var(--card-line);
+    border-bottom:1px solid var(--card-line);
+  }
   .bubble.show{ opacity:1; transform:translateX(-50%) translateY(0);}
 
-  /* stats */
-  .stats{ display:flex; gap:10px; justify-content:center; margin:8px 0 18px; flex-wrap:wrap;}
-  .stat{ flex:1 1 0; min-width:128px; max-width:170px; }
-  .stat .lab{ display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--muted); margin-bottom:5px;}
-  .stat .lab .n{ font-family:var(--f-mono); font-size:11px; color:var(--ink); }
-  .stat .lab b{ font-weight:600; color:var(--ink); display:flex; gap:5px; align-items:center; }
-  .track{ height:11px; border-radius:999px; background:var(--bar-track); overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.08);}
+  .stats{
+    position:relative;
+    z-index:4;
+    display:grid;
+    gap:clamp(5px, 0.7svh, 8px);
+    justify-content:center;
+    margin:clamp(4px, 0.6svh, 8px) 0 clamp(8px, 1svh, 12px);
+    background:linear-gradient(180deg, #FFFDF9, var(--card));
+  }
+  .stat{ min-width:0; }
+  .stat .lab{ display:flex; align-items:center; justify-content:space-between; font-size:clamp(10px, 0.85vw, 11.5px); color:var(--muted); margin-bottom:3px;}
+  .stat .lab .n{ font-family:var(--f-mono); font-size:clamp(9px, 0.76vw, 10.5px); color:var(--ink); }
+  .stat .lab b{ font-weight:600; color:var(--ink); display:flex; gap:4px; align-items:center; }
+  .track{ height:clamp(7px, 0.9svh, 9px); border-radius:999px; background:var(--bar-track); overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.08);}
   .fill{ height:100%; width:50%; border-radius:999px; transition:width .5s cubic-bezier(.2,.8,.2,1); }
   .fill.bonheur{ background:linear-gradient(90deg,#F0C36B,var(--honey)); }
   .fill.proprete{ background:linear-gradient(90deg,#9ED0E6,#5FA9C9); }
   .fill.lien{ background:linear-gradient(90deg,#B6C79C,var(--sage)); }
 
-  /* actions */
-  .actions{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center;}
+  .actions{ position:relative; z-index:4; display:flex; flex-wrap:wrap; gap:clamp(5px, 0.7vw, 8px); justify-content:center;}
   .act{
     appearance:none; cursor:pointer; border:1px solid var(--card-line);
-    background:#fff; color:var(--ink); font-family:var(--f-display); font-weight:500; font-size:15px;
-    border-radius:16px; padding:12px 16px; display:inline-flex; align-items:center; gap:8px;
+    background:#fff; color:var(--ink); font-family:var(--f-display); font-weight:500;
+    font-size:clamp(11.5px, 1vw, 13.8px);
+    border-radius:14px; padding:clamp(7px, 0.9svh, 10px) clamp(10px, 1.1vw, 13px);
+    display:inline-flex; align-items:center; gap:6px;
     transition:transform .12s, background .14s, border-color .14s, box-shadow .14s;
   }
-  .act .emo{ font-size:18px; }
+  .act .emo{ font-size:clamp(14px, 1.2vw, 16.5px); }
   .act:hover{ background:#FFF8EE; border-color:#E4D2BD; transform:translateY(-2px); box-shadow:0 10px 20px -14px rgba(60,46,34,.5);}
   .act:active{ transform:translateY(0) scale(.97);}
   .act.primary{ background:var(--clay); color:#fff; border-color:transparent; box-shadow:0 12px 24px -12px rgba(168,83,63,.7);}
   .act.primary:hover{ background:var(--clay-deep);}
-  .act:disabled{ opacity:.55; cursor:default; transform:none; box-shadow:none;}
+  .act:disabled{ opacity:.55; cursor:not-allowed; pointer-events:none; transform:none; box-shadow:none;}
 
-  .footline{ text-align:center; margin-top:16px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); letter-spacing:.4px;}
+  .footline{ position:relative; z-index:4; text-align:center; margin-top:clamp(6px, 0.8svh, 10px); font-family:var(--f-mono); font-size:clamp(9.8px, 0.82vw, 11px); color:var(--muted); letter-spacing:.35px;}
   .footline .lvl{ color:var(--sage-deep); font-weight:700;}
 
-  /* toast / succès */
-  .toasts{ position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:50;
-    display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; width:min(380px,92vw);}
+  .toasts{ position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:60;
+    display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; width:min(380px,92vw);}
   .toast{
-    background:var(--ink); color:#FBF6EF; border-radius:16px; padding:12px 16px; width:100%;
+    background:var(--ink); color:#FBF6EF; border-radius:16px; padding:11px 15px; width:100%;
     box-shadow:0 18px 40px -18px rgba(0,0,0,.6); display:flex; gap:12px; align-items:flex-start;
     transform:translateY(-16px); opacity:0; transition:transform .35s cubic-bezier(.2,.9,.2,1), opacity .35s;
   }
   .toast.show{ transform:none; opacity:1;}
-  .toast .tEmo{ font-size:22px; line-height:1; flex:0 0 auto; margin-top:1px;}
-  .toast .tT{ font-family:var(--f-display); font-weight:600; font-size:14.5px; margin-bottom:2px;}
-  .toast .tD{ font-size:12.5px; color:#E9DECF; line-height:1.4;}
+  .toast .tEmo{ font-size:20px; line-height:1; flex:0 0 auto; margin-top:1px;}
+  .toast .tT{ font-family:var(--f-display); font-weight:600; font-size:14px; margin-bottom:2px;}
+  .toast .tD{ font-size:12px; color:#E9DECF; line-height:1.35;}
 
-  /* focus visibility */
   :focus-visible{ outline:3px solid var(--clay); outline-offset:2px; border-radius:8px;}
 
-  @media (max-width:480px){
-    .card{ padding:20px 16px 24px; border-radius:26px;}
-    .act{ font-size:14px; padding:11px 13px;}
-    .stat{ min-width:104px; }
-  }
-
   @media (prefers-reduced-motion: reduce){
-    .ambient{ animation:none;}
+    .ambient, .dock-badge, .transmute-flash.active, .prop-brush, .prop-lamp, .prop-drill, .prop-lab, .right-panel.open{ animation:none;}
     *{ animation-duration:.001ms !important; transition-duration:.08s !important;}
   }
+
+  /* ===== Corrections v8 ===== */
+  #rock{transform-box:fill-box;transform-origin:50% 100%;} /* pivot au centre-bas du caillou */
+  .fill.satiete{background:linear-gradient(90deg,#F5C58A,#E08A3C);}
+  .stat:last-child{grid-column:1/-1;}
+  .eyebrow,.rp-head,.section-kicker{color:var(--clay-deep);}
+  /* Lisibilité : aucun texte sous 10 px */
+  .shop-desc,.mission-desc,.achievement-item .achievement-desc{font-size:11px;}
+  .achievement-item,.journal-item,.side-empty,.prestige-box p{font-size:11.5px;}
+  .journal-item strong,.mission-top,.shop-top{font-size:12px;}
+  .shop-owned,.mission-tier,.achievement-item .achievement-badge,.section-kicker,.drawer-head,.rp-head,.prestige-meta,.mission-foot{font-size:10.5px;}
+  .tycoon-kpi .k-label,.tycoon-kpi .k-sub{font-size:clamp(10px,.8vw,11px);}
+  .stat .lab .n{font-size:clamp(10.5px,.85vw,11.5px);}
+  .readout,.footline{font-size:clamp(10.5px,.85vw,11.5px);}
+  .bubble{font-size:clamp(11px,.9vw,12.5px);}
+  .prop-extra{display:none;position:absolute;font-size:22px;line-height:1;animation:propFloat 3s ease-in-out infinite alternate;}
+  @keyframes propFloat{from{transform:translateY(0);}to{transform:translateY(-6px);}}
 </style>
 </head>
 <body>
 <div class="ambient" aria-hidden="true"></div>
+<div class="transmute-flash" id="transmuteFlash" aria-hidden="true"></div>
+<div class="hover-tooltip" id="hoverTooltip" role="tooltip" aria-hidden="true"></div>
+
+<div class="confirm-backdrop" id="confirmBackdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="confirm-modal">
+    <h2 id="confirmTitle">Jeter votre caillou ?</h2>
+    <p>Cette action effacera votre progression actuelle et votre sauvegarde locale.</p>
+    <div class="confirm-actions">
+      <button type="button" class="confirm-btn" id="cancelResetBtn">Annuler</button>
+      <button type="button" class="confirm-btn danger" id="confirmResetBtn">Jeter le caillou</button>
+    </div>
+  </div>
+</div>
+
+<div class="left-shell" id="leftShell">
+  <nav class="left-dock" id="leftDock" aria-label="Menu des panneaux">
+    <button class="dock-btn" data-panel="career" title="Équipements pépites" aria-label="Équipements pépites">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14.5 5.5 18.5 9.5"/>
+        <path d="m13 7 6 6"/>
+        <path d="m4 20 8-8"/>
+        <path d="m15 4 5 5-2 2-5-5z"/>
+      </svg>
+    </button>
+    <button class="dock-btn" data-panel="diamondShop" title="Boutique Diamants" aria-label="Boutique Diamants">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 3h12l4 6-10 12L2 9l4-6Z"/>
+        <path d="M11 3 8 9l4 12 4-12-3-6"/>
+        <path d="M2 9h20"/>
+      </svg>
+      <span class="dock-badge" id="diamondShopBadge" aria-hidden="true">!</span>
+    </button>
+    <button class="dock-btn" data-panel="missions" title="Objectifs du jour" aria-label="Objectifs du jour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8"/>
+        <circle cx="12" cy="12" r="3"/>
+        <path d="m16 8 4-4"/>
+      </svg>
+      <span class="dock-badge" id="missionsBadge" aria-hidden="true">!</span>
+    </button>
+    <button class="dock-btn" data-panel="achievements" title="Succès" aria-label="Succès">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 21h8"/>
+        <path d="M12 17v4"/>
+        <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z"/>
+        <path d="M5 6h2v3a2 2 0 0 1-2-2V6Z"/>
+        <path d="M19 6h-2v3a2 2 0 0 0 2-2V6Z"/>
+      </svg>
+    </button>
+    <button class="dock-btn" data-panel="journal" title="Événements récents" aria-label="Événements récents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>
+        <path d="M8 7h8"/>
+        <path d="M8 11h6"/>
+      </svg>
+    </button>
+  </nav>
+
+  <aside class="dock-drawer" id="dockDrawer" aria-label="Contenu du menu latéral">
+    <div class="drawer-panel" data-panel-content="career">
+      <div class="drawer-head"><span>ÉQUIPEMENTS (ACHAT UNIQUE)</span><button class="drawer-close" data-close-drawer title="Fermer" aria-label="Fermer">×</button></div>
+      <div class="shop-list" id="shopList"></div>
+    </div>
+
+    <div class="drawer-panel" data-panel-content="diamondShop">
+      <div class="drawer-head"><span>BOUTIQUE DIAMANTS</span><button class="drawer-close" data-close-drawer title="Fermer" aria-label="Fermer">×</button></div>
+      <div class="prestige-box">
+        <span class="prestige-meta" id="diamondStatus">0 Diamant · 0 transmutation (+0% pépites)</span>
+        <p id="diamondHint">Transmuter remet les pépites à 0 et réinitialise les équipements pépites. Chaque transmutation ajoute +20 % permanents aux pépites.</p>
+        <button class="prestige-btn" id="convertDiamondBtn">Transmuter 3 000 pépites → +1 Diamant</button>
+      </div>
+      <div id="diamondShopSection" style="display:none; margin-top:10px;">
+        <div class="section-kicker">ARTICLES DIAMANTS</div>
+        <div class="shop-list" id="diamondShopList"></div>
+      </div>
+    </div>
+
+    <div class="drawer-panel" data-panel-content="missions">
+      <div class="drawer-head"><span>OBJECTIFS DU JOUR</span><button class="drawer-close" data-close-drawer title="Fermer" aria-label="Fermer">×</button></div>
+      <div id="dailyMissions"></div>
+      <button class="claim-btn" id="claimMissionsBtn" disabled>Terminer les objectifs</button>
+    </div>
+
+    <div class="drawer-panel" data-panel-content="achievements">
+      <div class="drawer-head"><span id="achievementsHeaderTitle">SUCCÈS</span><button class="drawer-close" data-close-drawer title="Fermer" aria-label="Fermer">×</button></div>
+      <div class="achievement-list" id="achievementsOrderedList"></div>
+    </div>
+
+    <div class="drawer-panel" data-panel-content="journal">
+      <div class="drawer-head"><span>ÉVÉNEMENTS RÉCENTS</span><button class="drawer-close" data-close-drawer title="Fermer" aria-label="Fermer">×</button></div>
+      <div class="journal" id="activityJournal"><p class="side-empty">Ton aventure commence ici.</p></div>
+    </div>
+  </aside>
+</div>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
@@ -224,18 +1119,16 @@
     <div class="topbar">
       <div class="wordmark"><span class="pebble-mark" aria-hidden="true"></span><b>Cailloutchi</b></div>
       <div class="tools">
-        <button class="icon-btn" id="soundBtn" title="Activer / couper le son" aria-label="Son">🔊</button>
-        <button class="icon-btn" id="resetBtn" title="Abandonner mon caillou" aria-label="Recommencer">↺</button>
+        <button class="icon-btn" id="soundBtn" aria-pressed="true" title="Activer / couper le son" aria-label="Son">🔊</button>
+        <button class="icon-btn" id="resetBtn" title="Jeter mon caillou" aria-label="Jeter mon caillou" style="display:none;">🗑️</button>
       </div>
     </div>
 
-    <!-- ADOPTION -->
     <section class="screen active" id="adoptScreen">
       <div class="adopt">
-        <div class="eyebrow">élevage minéral · modèle 3000</div>
+        <div class="eyebrow">élevage minéral · model 3000</div>
         <h1>Adoptez votre caillou.</h1>
-        <p class="lede">Un compagnon loyal, silencieux, increvable. Il ne mange pas, ne dort pas, ne bouge pas — mais il sera là dans un million d'années. Donnez-lui un petit nom.</p>
-        <!-- adoption rock (static, smiling) -->
+        <p class="lede">Un compagnon loyal, silencieux, increvable. Prenez soin de lui pour extraire des pépites, accumuler des Diamants et le faire évoluer.</p>
         <svg class="adopt-rock" viewBox="0 0 300 250" role="img" aria-label="Un petit caillou souriant">
           <defs>
             <radialGradient id="ag" cx="38%" cy="30%" r="80%">
@@ -251,7 +1144,6 @@
           <circle cx="185" cy="112" r="2.4" fill="#B8AD9F" opacity=".5"/>
           <circle cx="205" cy="135" r="3" fill="#544B45" opacity=".4"/>
           <circle cx="92" cy="150" r="2.2" fill="#544B45" opacity=".4"/>
-          <!-- happy face -->
           <path d="M110,150 Q119,140 128,150" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
           <path d="M172,150 Q181,140 190,150" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
           <ellipse cx="116" cy="168" rx="11" ry="7" fill="#E09F8F" opacity=".55"/>
@@ -259,46 +1151,64 @@
           <path d="M132,170 Q150,188 168,170" fill="none" stroke="#2b2520" stroke-width="6" stroke-linecap="round"/>
         </svg>
         <div class="name-row">
-          <input class="field" id="nameField" maxlength="14" placeholder="ex. Roger, Kévin, Pétra…" autocomplete="off">
+          <input class="field" id="nameField" aria-label="Nom de votre caillou" maxlength="14" placeholder="ex. Roger, Kévin, Pétra…" autocomplete="off">
           <button class="btn" id="adoptBtn">Adopter</button>
         </div>
-        <div class="fine">aucune pierre n'a été blessée · 0 % de batterie requise</div>
+        <div class="fine">producteur de pépites · chercheur de diamants</div>
       </div>
     </section>
 
-    <!-- GAME -->
     <section class="screen" id="gameScreen">
       <div class="gamehead">
         <div class="name-line">
-          <span class="pet-name" id="petName" title="Cliquer pour renommer">Roger</span>
-          <input class="rename-input" id="renameInput" maxlength="14">
-          <button class="icon-btn pencil" id="renameBtn" title="Renommer" aria-label="Renommer" style="width:30px;height:30px;border-radius:9px;">✎</button>
+          <span class="pet-name" id="petName">Roger</span>
+          <span class="age-inline" id="ageMain">0 j 00 h 00 min 00 s</span>
         </div>
-        <div class="readout">
-          <span id="ageMain">0 j 00 h 00 min 00 s</span>
-          <span class="sub">âge géologique estimé : 4 537 000 000 ans · ensemble depuis l'adoption</span>
+        <div class="readout" id="rockTierLabel">Roche brute · ensemble depuis l'adoption</div>
+      </div>
+
+      <div class="tycoon-bar" id="tycoonBar" aria-label="Tableau économique">
+        <div class="tycoon-kpi">
+          <span class="k-label">Pépites</span>
+          <span class="k-val" id="kpiPebbles">0</span>
+          <span class="k-sub" id="kpiRate">+1,0 /min</span>
+        </div>
+        <div class="tycoon-kpi" id="kpiDiamondsBox" style="display:none;">
+          <span class="k-label">Diamants</span>
+          <span class="k-val" id="kpiDiamonds">0 💎</span>
+          <span class="k-sub" id="kpiDiamondBonus"></span>
+        </div>
+        <div class="tycoon-kpi" id="kpiTransmutationsBox" style="display:none;">
+          <span class="k-label">Transmutations</span>
+          <span class="k-val" id="kpiTransmutations">0</span>
+          <span class="k-sub" id="kpiTransmuteBonus">+0% pépites</span>
         </div>
       </div>
 
-      <div class="arena">
+      <div class="arena" id="arena">
         <div class="bubble" id="bubble">…</div>
-        <canvas id="fx"></canvas>
-        <div class="rock-wrap">
-          <!-- THE rock -->
+        <div class="gear-props" aria-hidden="true">
+          <div class="prop-lamp" id="propLamp"></div>
+          <div class="prop-brush" id="propBrush">🪥</div>
+          <div class="prop-drill" id="propDrill">⛏️</div>
+          <div class="prop-lab" id="propLab">🔬</div>
+          <div class="prop-museum" id="propMuseum">MUSÉE</div>
+        </div>
+        <div class="cushion-pad" id="cushionPad" aria-hidden="true"></div>
+        <canvas id="fx" aria-hidden="true"></canvas>
+        <div class="rock-wrap" id="rockWrap">
           <svg class="rock-svg" id="rockSvg" viewBox="0 0 300 250" role="img" aria-label="Votre caillou de compagnie">
             <defs>
               <radialGradient id="stoneGrad" cx="38%" cy="28%" r="82%">
-                <stop offset="0%" stop-color="#AC9F8D"/>
-                <stop offset="52%" stop-color="#7E7568"/>
-                <stop offset="100%" stop-color="#554D47"/>
+                <stop id="gradStop0" offset="0%" stop-color="#AC9F8D"/>
+                <stop id="gradStop1" offset="52%" stop-color="#7E7568"/>
+                <stop id="gradStop2" offset="100%" stop-color="#554D47"/>
               </radialGradient>
             </defs>
 
-            <!-- ground shadow (outside #rock so it doesn't wiggle) -->
             <ellipse id="groundShadow" cx="150" cy="224" rx="100" ry="16" fill="#2E2722" opacity="0.15"/>
 
             <g id="rock">
-              <!-- sprout grows from the top as bond deepens -->
               <g id="sprout" data-stage="0" style="opacity:0;">
                 <path id="spStem" d="M186,84 C184,68 188,56 190,46" fill="none" stroke="#6E8159" stroke-width="3.4" stroke-linecap="round"/>
                 <path id="spLeafL" d="M188,66 C176,62 168,66 166,74 C176,76 184,74 188,66 Z" fill="#8FA17B" opacity="0"/>
@@ -317,8 +1227,19 @@
 
               <path id="rockBody" d="M45,150 C45,104 82,80 150,78 C220,76 258,108 256,152 C255,193 214,222 150,222 C88,222 45,196 45,150 Z" fill="url(#stoneGrad)"/>
 
-              <!-- sheen + texture -->
-              <ellipse cx="106" cy="116" rx="42" ry="27" fill="#fff" opacity="0.10"/>
+              <g id="dirtLayer" opacity="0">
+                <ellipse cx="86" cy="186" rx="22" ry="11" fill="#6E4E32" opacity=".75"/>
+                <ellipse cx="212" cy="184" rx="24" ry="12" fill="#6E4E32" opacity=".7"/>
+                <circle cx="150" cy="204" r="18" fill="#5E4127" opacity=".65"/>
+                <circle cx="96" cy="112" r="11" fill="#6E4E32" opacity=".55"/>
+                <circle cx="204" cy="116" r="10" fill="#6E4E32" opacity=".55"/>
+              </g>
+
+              <g id="shineLayer" opacity="0">
+                <ellipse cx="106" cy="114" rx="44" ry="26" fill="#fff" opacity="0.28"/>
+                <path d="M214,96 L220,108 L232,114 L220,120 L214,132 L208,120 L196,114 L208,108 Z" fill="#FFFDF5" opacity="0.85"/>
+              </g>
+
               <g opacity="0.5">
                 <circle cx="116" cy="120" r="3" fill="#C2B7A8"/>
                 <circle cx="186" cy="108" r="2.3" fill="#C2B7A8"/>
@@ -328,10 +1249,7 @@
                 <circle cx="226" cy="158" r="2.2" fill="#544B45"/>
                 <circle cx="74" cy="160" r="2" fill="#544B45"/>
               </g>
-              <path d="M70,170 q14,8 30,5" fill="none" stroke="#544B45" stroke-width="1.4" opacity="0.28"/>
-              <path d="M210,170 q-10,9 -22,8" fill="none" stroke="#544B45" stroke-width="1.4" opacity="0.24"/>
 
-              <!-- FACE -->
               <g id="cheeks" opacity="0">
                 <ellipse cx="116" cy="170" rx="12" ry="7.5" fill="#E09F8F" opacity=".55"/>
                 <ellipse cx="184" cy="170" rx="12" ry="7.5" fill="#E09F8F" opacity=".55"/>
@@ -374,7 +1292,19 @@
         </div>
         <div class="stat">
           <div class="lab"><b><span>🤝</span> Lien</b><span class="n" id="vLien">0%</span></div>
-          <div class="track"><div class="fill lien" id="fLien"></div></div>
+          <div class="track"><div class="fill lien" id="fLien"></div></div></div><div class="stat"><div class="lab"><b><span>🍖</span> Satiété</b><span class="n" id="vHunger">60%</span></div><div class="track"><div class="fill satiete" id="fHunger"></div></div>
+        </div>
+        <div class="stat">
+          <div class="lab"><b><span>😴</span> Fatigue</b><span class="n" id="vFatigue">0%</span></div>
+          <div class="track"><div class="fill fatigue" id="fFatigue"></div></div>
+        </div>
+        <div class="stat">
+          <div class="lab"><b><span>〰️</span> Résonance</b><span class="n" id="vResonance">0%</span></div>
+          <div class="track"><div class="fill resonance" id="fResonance"></div></div>
+        </div>
+        <div class="stat">
+          <div class="lab"><b><span>⚖️</span> Équilibre</b><span class="n" id="vBalance">50%</span></div>
+          <div class="track"><div class="fill balance" id="fBalance"></div></div>
         </div>
       </div>
 
@@ -391,27 +1321,253 @@
   </div>
 </div>
 
+<aside class="right-panel" id="rightPanel" aria-label="Mini-jeu d'entraînement">
+  <div class="rp-head">
+    <span id="rpTag">ENTRAÎNEMENT</span>
+    <button type="button" class="rp-close" id="closeRightPanelBtn" title="Fermer" aria-label="Fermer">×</button>
+  </div>
+  <h2 class="rp-title" id="rpTitle">Tour</h2>
+  <p class="rp-sub" id="rpSub"></p>
+  <div class="mg-box" id="mgBox"></div>
+</aside>
+
 <script>
 (function(){
   "use strict";
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const SAVE_KEY = 'cailloutchi_v1';
-  const GEO_AGE = "4 537 000 000";
+  const SAVE_KEY = 'cailloutchi';
+  const BASE_TRANSMUTE_COST = 3000;
+  const TRANSMUTE_COST_GROWTH = 1.800;   
+  const OFFLINE_CAP_SECONDS = 28800;     
+  const STAT_MAXED_BONUS_PPS = 0.2;      // pépites/s par statistique au maximum (5 stats → +1/s)
+  const HUNGER_DECAY_SECONDS = 30;       // -1 % de satiété toutes les 30 s
+  const TALK_COOLDOWN_MS = 10000;
+  const SLEEP_DURATION_MS = 120000;
+  const IDLE_HAPPINESS_DELAY_MS = 60000;
+  const IDLE_HAPPINESS_STEP_MS = 5000;
 
-  // ---------- state ----------
-  const state = {
-    name:"Roger",
-    bonheur:55, proprete:60, lien:0,
-    bond:0,                 // points -> level & lien bar
-    pets:0, talks:0, feeds:0, washes:0, tricks:0,
-    adoptedAt:Date.now(),
-    achievements:[],        // ids
-    muted:false
+  const ACTION_EFFECT_HINTS = {
+    pet:   "+1 pépite · +1% Bonheur · +2% Lien · +1 XP lien",
+    feed:  "+20% Satiété · -2% Fatigue · +1% Bonheur · +2% Lien",
+    wash:  "+1% Propreté · +2% Lien (max 20 / 2 min)",
+    talk:  "-5% Fatigue · +1% Bonheur · +2% Lien (recharge 10s)",
+    trick: "+20% Fatigue · +2% Résonance · +2% Lien · -5% Bonheur & Propreté · Mini-jeux avec gain de pépites"
   };
 
-  // ---------- save / load (robuste : marche sans stockage) ----------
+  const ONE_TIME_ITEMS = [
+    {id:"brush",   emo:"🪥", name:"Brosse rotative",         desc:"+1 pépite / s · brosse à côté du caillou",      pps: 1,      cost: 40},
+    {id:"cushion", emo:"🛋️", name:"Coussin en mousse",       desc:"+2,5 pépites / s · coussin bleu sous le caillou", pps: 2.5,      cost: 250},
+    {id:"lamp",    emo:"☀️", name:"Lampe UV minérale",       desc:"+12 pépites / s · faisceau UV latéral",           pps: 12,       cost: 2000},
+    {id:"drill",   emo:"⛏️", name:"Foreuse silencieuse",     desc:"+55 pépites / s · extraction active",             pps: 55,       cost: 15000},
+    {id:"lab",     emo:"🔬", name:"Labo de polissage",       desc:"+260 pépites / s · prisme rotatif",               pps: 260,      cost: 110000},
+    {id:"museum",  emo:"🏛️", name:"Musée du Caillou",        desc:"+1 200 pépites / s · vitrine officielle",         pps: 1200,     cost: 800000},
+    {id:"crusher", emo:"🌋", name:"Concasseur géothermique", desc:"+5 500 pépites / s · chaleur du manteau",         pps: 5500,     cost: 5500000,     slot:{left:"5%",  top:"58%"}},
+    {id:"reactor", emo:"⚛️", name:"Réacteur à quartz",       desc:"+25 000 pépites / s · fission de cristaux",       pps: 25000,    cost: 38000000,    slot:{left:"14%", top:"24%"}},
+    {id:"portal",  emo:"🌀", name:"Portail de la faille",    desc:"+115 000 pépites / s · veine inter-dimensionnelle", pps: 115000, cost: 260000000,   slot:{left:"85%", top:"52%"}},
+    {id:"planet",  emo:"🪐", name:"Cœur de planète",         desc:"+520 000 pépites / s · noyau en fusion",          pps: 520000,   cost: 1800000000,  slot:{left:"5%",  top:"10%"}},
+    {id:"comet",   emo:"☄️", name:"Moissonneuse d'astéroïdes", desc:"+2,4 M pépites / s · récolte orbitale",         pps: 2400000,  cost: 12500000000, slot:{left:"80%", top:"8%"}},
+    {id:"dyson",   emo:"🌞", name:"Sphère de Dyson minérale", desc:"+11 M pépites / s · étoile domestiquée",         pps: 11000000, cost: 88000000000, slot:{left:"76%", top:"66%"}}
+  ];
+
+  const DIAMOND_ITEMS = [
+    {id:"d_anti_fatigue", emo:"🛏️", name:"Oreiller d'inertie",   desc:"Annule la fatigue due au temps (seuls les tours fatiguent)", cost: 1, ppsBonus: 0, preventsTimeFatigue: true},
+    {id:"d_magnet",       emo:"🧲", name:"Aimant à pépites",     desc:"+50 pépites / s permanent",                                  cost: 1, ppsBonus: 50},
+    {id:"d_stomach",      emo:"🍲", name:"Estomac de granit",    desc:"La satiété ne baisse plus avec le temps",                    cost: 1, ppsBonus: 0},
+    {id:"d_resonator",    emo:"〰️", name:"Diapason harmonique",  desc:"Maintient Lien et Bonheur au minimum à 90%",                 cost: 2, ppsBonus: 0, keepsBondAndHappy90: true},
+    {id:"d_core",         emo:"💠", name:"Cœur cristallin",       desc:"+250 pépites / s permanent",                                cost: 2, ppsBonus: 250},
+    {id:"d_sponge",       emo:"🧽", name:"Éponge céleste",       desc:"La propreté ne baisse plus avec le temps",                   cost: 2, ppsBonus: 0},
+    {id:"d_harmony",      emo:"⚖️", name:"Prisme d'équilibre",   desc:"+1 500 pépites / s permanent",                               cost: 3, ppsBonus: 1500},
+    {id:"d_hourglass",    emo:"⏳", name:"Sablier géologique",   desc:"Gains hors-ligne plafonnés à 16 h au lieu de 8 h",           cost: 3, ppsBonus: 0},
+    {id:"d_sanctum",      emo:"👑", name:"Sanctuaire du Roc",     desc:"+4 000 pépites / s permanent",                              cost: 4, ppsBonus: 4000},
+    {id:"d_prospector",   emo:"💰", name:"Pioche d'orichalque",  desc:"Récompenses des mini-jeux et des objectifs ×2",              cost: 4, ppsBonus: 0},
+    {id:"d_forge",        emo:"🔥", name:"Forge stellaire",      desc:"+20 000 pépites / s permanent",                              cost: 5, ppsBonus: 20000},
+    {id:"d_nexus",        emo:"🔮", name:"Nexus du noyau",       desc:"Production totale ×1,5",                                     cost: 6, ppsBonus: 0, ppsMult: 1.5},
+    {id:"d_crown",        emo:"🌌", name:"Couronne du Titan",    desc:"Production totale ×2",                                       cost: 6, ppsBonus: 0, ppsMult: 2}
+  ];
+
+  const ROCK_TIERS = [
+  {name:"Roche brute",        stops:["#AC9F8D","#7E7568","#554D47"]},
+  {name:"Quartz poli",        stops:["#E8DCE6","#B99FB4","#7B6378"]},
+  {name:"Jade impérial",      stops:["#A7C9A5","#6D9B6B","#3E643D"]},
+  {name:"Ambre solaire",      stops:["#F2C97D","#D4933B","#8C5619"]},
+  {name:"Obsidienne royale",  stops:["#7A748A","#443E54","#1E1A29"]},
+  {name:"Améthyste sacrée",   stops:["#CDA6FF","#8F63D2","#4A2D7A"]},
+  {name:"Topaze céleste",     stops:["#FFE08A","#F5B23C","#A66A00"]},
+  {name:"Saphir abyssal",     stops:["#85B9FF","#3D6DDC","#142C73"]},
+  {name:"Rubis du titan",     stops:["#FF8A8A","#D63A3A","#720E0E"]},
+  {name:"Émeraude éternelle", stops:["#8FF0B3","#35B86A","#126136"]},
+  {name:"Diamant astral",     stops:["#FFFFFF","#CFEFFF","#7BB7FF"]},
+  {name:"Mithril antique",    stops:["#D8F4FF","#89D4F0","#2E769A"]},
+  {name:"Adamantium pur",     stops:["#D8D8E0","#9898A8","#4A4A5A"]},
+  {name:"Orichalque divin",   stops:["#FFE2A8","#FFAE42","#B35C00"]},
+  {name:"Cœur de météore",    stops:["#A6FFFF","#39D9FF","#003A6B"]},
+  {name:"Opale stellaire",    stops:["#FFF1FB","#C8B6FF","#6E5BC9"]},
+  {name:"Pierre de lune",     stops:["#F2F5FF","#B9C4E8","#5B6797"]},
+  {name:"Cristal du vide",    stops:["#B9A6FF","#5A3DD6","#150B52"]},
+  {name:"Lave primordiale",   stops:["#FFC27A","#F0572B","#6B0F0A"]},
+  {name:"Glace éternelle",    stops:["#F4FFFF","#A5E8F5","#3A8EA8"]},
+  {name:"Étoile à neutrons",  stops:["#FFFFFF","#9FD0FF","#2B4FA8"]},
+  {name:"Matière noire",      stops:["#6C6C86","#2A2A3F","#050510"]},
+  {name:"Prisme cosmique",    stops:["#FFB3E6","#8FD6FF","#B6FF9E"]},
+  {name:"Noyau de galaxie",   stops:["#FFE9A8","#FF9F5C","#7A2E7A"]},
+  {name:"Caillou absolu",     stops:["#FFFFFF","#FFE9A8","#E0A95E"]}
+];
+
+  const ACTION_LIMITS = {
+    feed: {windowMs: 120000, maxCount: 20},
+    wash: {windowMs: 120000, maxCount: 20}
+  };
+
+  /* Minéraux terrestres à dureté Mohs distincte */
+  const EARTH_MINERALS = [
+    {name:"Talc", mohs:1},
+    {name:"Gypse", mohs:2},
+    {name:"Calcite", mohs:3},
+    {name:"Fluorite", mohs:4},
+    {name:"Apatite", mohs:5},
+    {name:"Orthose", mohs:6},
+    {name:"Quartz", mohs:7},
+    {name:"Topaze", mohs:8},
+    {name:"Corindon", mohs:9},
+    {name:"Diamant", mohs:10}
+  ];
+
+  const DAILY_MISSIONS_POOL = [
+    {id:"pet_easy",    metric:"pet",    emo:"🫳", tier:"Facile",   tierClass:"easy", title:"Douceur minérale",     desc:"Caresser votre caillou 5 fois",       goal:5,   pebbles:60},
+    {id:"talk_easy",   metric:"talk",   emo:"💬", tier:"Facile",   tierClass:"easy", title:"Briser le silence",    desc:"Parler 3 fois à votre caillou",       goal:3,   pebbles:75},
+    {id:"wash_easy",   metric:"wash",   emo:"🚿", tier:"Facile",   tierClass:"easy", title:"Coup d'éclat",         desc:"Laver votre caillou 3 fois",          goal:3,   pebbles:80},
+    {id:"feed_easy",   metric:"feed",   emo:"🍽️", tier:"Facile",   tierClass:"easy", title:"Collation symbolique", desc:"Nourrir votre caillou 4 fois",        goal:4,   pebbles:90},
+    {id:"pet_med",     metric:"pet",    emo:"💗", tier:"Moyen",    tierClass:"med",  title:"Séance de tendresse",  desc:"Caresser votre caillou 25 fois",      goal:25,  pebbles:220},
+    {id:"wash_med",    metric:"wash",   emo:"🫧", tier:"Moyen",    tierClass:"med",  title:"Polissage intensif",   desc:"Laver votre caillou 10 fois",         goal:10,  pebbles:260},
+    {id:"trick_med",   metric:"trick",  emo:"🎓", tier:"Moyen",    tierClass:"med",  title:"Dressage de précision",desc:"Apprendre 3 tours",                   goal:3,   pebbles:350},
+    {id:"pet_hard",    metric:"pet",    emo:"🌟", tier:"Difficile",tierClass:"hard", title:"Main infatigable",     desc:"Caresser votre caillou 75 fois",      goal:75,  pebbles:650},
+    {id:"trick_hard",  metric:"trick",  emo:"🏆", tier:"Difficile",tierClass:"hard", title:"Maître du cirque",     desc:"Apprendre 8 tours",                   goal:8,   pebbles:900}
+  ];
+
+  const ACHIEVEMENTS = {
+    a01: {emo:"🪨", t:"Pacte minéral",            d:"Adopter votre premier caillou.", secret:false},
+    a02: {emo:"🫳", t:"Effleurement initial",      d:"Donner 10 caresses.", secret:false},
+    a03: {emo:"🫶", t:"Paume attentive",          d:"Donner 50 caresses.", secret:false},
+    a04: {emo:"🖐️", t:"Caresseur acharné",       d:"Donner 200 caresses.", secret:false},
+    a05: {emo:"🧱", t:"Crampe de granit",         d:"Donner 1 000 caresses.", secret:false},
+    a06: {emo:"🤍", t:"Mains d'albâtre",          d:"Donner 5 000 caresses.", secret:false},
+    a07: {emo:"🍽️", t:"Première bouchée",         d:"Nourrir le caillou 10 fois.", secret:false},
+    a08: {emo:"🥣", t:"Intendant du roc",         d:"Nourrir le caillou 60 fois.", secret:false},
+    a09: {emo:"🍖", t:"Banquet lithique",         d:"Nourrir le caillou 250 fois.", secret:false},
+    a10: {emo:"🚿", t:"Mousse de quartz",         d:"Laver le caillou 15 fois.", secret:false},
+    a11: {emo:"🧼", t:"Lustrage profond",         d:"Laver le caillou 75 fois.", secret:false},
+    a12: {emo:"✨", t:"Éclat de marbre",          d:"Laver le caillou 300 fois.", secret:false},
+    a13: {emo:"💬", t:"Monologue à deux",         d:"Engager 15 conversations.", secret:false},
+    a14: {emo:"🦉", t:"Philosophe du silex",      d:"Engager 80 conversations.", secret:false},
+    a15: {emo:"🔮", t:"Oracle de basalte",        d:"Engager 250 conversations.", secret:false},
+    a16: {emo:"🎓", t:"Premier numéro",           d:"Faire apprendre 10 tours.", secret:false},
+    a17: {emo:"🎪", t:"Dompteur de gravier",      d:"Faire apprendre 40 tours.", secret:false},
+    a18: {emo:"🎩", t:"Grand illusionniste",      d:"Faire apprendre 120 tours.", secret:false},
+    a19: {emo:"🪙", t:"Pépite inaugurale",        d:"Posséder 100 pépites en stock.", secret:false},
+    a20: {emo:"🧰", t:"Coffre de grès",           d:"Posséder 2 500 pépites en stock.", secret:false},
+    a21: {emo:"⛏️", t:"Fosse aurifère",           d:"Posséder 50 000 pépites en stock.", secret:false},
+    a22: {emo:"🏦", t:"Chambre forte",            d:"Posséder 1 000 000 pépites en stock.", secret:false},
+    a23: {emo:"🌋", t:"Magnat tectonique",        d:"Posséder 100 000 000 pépites en stock.", secret:false},
+    a24: {emo:"👑", t:"Souverain de l'écorce",    d:"Posséder 10 000 000 000 pépites en stock.", secret:false},
+    a25: {emo:"🪥", t:"Premier outillage",        d:"Acheter 1 équipement unique.", secret:false},
+    a26: {emo:"⚙️", t:"Atelier mécanisé",         d:"Acheter 3 équipements uniques.", secret:false},
+    a27: {emo:"🏛️", t:"Empire minier complet",    d:"Acheter tous les équipements uniques.", secret:false},
+    a28: {emo:"⚡", t:"Cadence soutenue",         d:"Atteindre 10 pépites / seconde.", secret:false},
+    a29: {emo:"🔥", t:"Fonderie continue",        d:"Atteindre 100 pépites / seconde.", secret:false},
+    a30: {emo:"☄️", t:"Cataclysme doré",         d:"Atteindre 1 000 pépites / seconde.", secret:false},
+    a31: {emo:"💎", t:"Éveil cristallin",         d:"Forger 1 Diamant.", secret:true},
+    a32: {emo:"💠", t:"Chasseur de facettes",     d:"Forger 5 Diamants au total.", secret:true},
+    a33: {emo:"🧪", t:"Alchimiste du noyau",      d:"Effectuer 3 transmutations.", secret:true},
+    a34: {emo:"🌀", t:"Spirale ascendante",            d:"Effectuer 6 transmutations.", secret:true},
+    a35: {emo:"🧲", t:"Mécène de cristal",        d:"Acheter 1 article dans la boutique Diamants.", secret:true},
+    a36: {emo:"👑", t:"Collectionneur royal",     d:"Acheter tous les articles de la boutique Diamants.", secret:true},
+    a37: {emo:"🌞", t:"Joie absolue",             d:"Atteindre 100% de bonheur.", secret:true},
+    a38: {emo:"⚖️", t:"Harmonisation totale",     d:"Atteindre 85% d'équilibre.", secret:false},
+    a39: {emo:"〰️", t:"Résonance élevée",         d:"Atteindre 80% de résonance.", secret:false},
+    a40: {emo:"🤝", t:"Lien indéfectible",        d:"Atteindre 90% de lien.", secret:false},
+    a41: {emo:"😴", t:"Épuisement minéral",       d:"Déclencher un sommeil à 100% de fatigue.", secret:true},
+    a42: {emo:"🟤", t:"Cadeau de la terre",       d:"Récupérer un cadeau de terre inutile.", secret:true},
+    a43: {emo:"🎁", t:"Dividendes de roche",      d:"Récupérer un cadeau de pépites.", secret:true},
+    a44: {emo:"🎯", t:"Premier défi bouclé",      d:"Valider une récompense d'objectifs du jour.", secret:false},
+    a45: {emo:"⏳", t:"Quart d'heure géologique", d:"Rester 15 minutes avec votre caillou.", secret:false},
+    a46: {emo:"🕰️", t:"Une heure de silence",     d:"Rester 1 heure avec votre caillou.", secret:false},
+    a47: {emo:"📅", t:"Trois jours de veille",     d:"Jouer sur 3 jours distincts.", secret:false},
+    a48: {emo:"🔥", t:"Série de 5 jours",         d:"Enchaîner 5 jours consécutifs.", secret:false},
+    a49: {emo:"🗓️", t:"Semaine d'érosion",        d:"Jouer sur 7 jours distincts.", secret:false},
+    a50: {emo:"🏔️", t:"Quinzaine séculaire",      d:"Jouer sur 14 jours distincts.", secret:false},
+    a51: {emo:"⚛️", t:"Réacteur en marche",       d:"Atteindre 10 000 pépites / seconde.", secret:false},
+    a52: {emo:"☄️", t:"Pluie de météores",        d:"Atteindre 1 000 000 pépites / seconde.", secret:false},
+    a53: {emo:"🌞", t:"Étoile domestique",        d:"Atteindre 100 000 000 pépites / seconde.", secret:false},
+    a54: {emo:"🔮", t:"Alchimiste confirmé",      d:"Effectuer 10 transmutations.", secret:true},
+    a55: {emo:"🌌", t:"Maître des transmutations", d:"Effectuer 25 transmutations.", secret:true},
+    a56: {emo:"🪨", t:"Caillou absolu",           d:"Effectuer 40 transmutations.", secret:true}
+  };
+
+  function dayStamp(d){
+    const dt = d || new Date();
+    return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,'0')+"-"+String(dt.getDate()).padStart(2,'0');
+  }
+  function yesterdayStamp(){
+    return dayStamp(new Date(Date.now() - 86400000));
+  }
+
+  function createInitialState(){
+    return {
+      name:"Roger",
+      bonheur:50,
+      proprete:50,
+      lien:0,
+      bond:0,
+      fatigue:0,
+      resonance:0,
+      hunger:60,
+      sleepingUntil:0,
+      trickPending:false,
+      lastActionAt:Date.now(),
+      lastHappinessDecayStepAt:Date.now(),
+      lastLienDecayAt:Date.now(),
+      lastCleanDecayAt:Date.now(),
+      lastGiftCheckAt:Date.now(),
+      pendingGift:null,
+      lastMinuteRateCheckAt:Date.now(),
+      lastMinutePps: 1/60,
+      bondBonusAccumulator:0,
+      resonanceBonusAccumulator:0,
+      lastTalkAt:0,
+      actionTimestamps:{feed:[], wash:[], trick:[]},
+      pets:0, talks:0, feeds:0, washes:0, tricks:0,
+      adoptedAt:Date.now(),
+      activeDays:[dayStamp()],
+      streakDays:1,
+      lastActiveDay:dayStamp(),
+      dailyDate:"",
+      dailyMissionIds:[],
+      dailyProgress:{pet:0, feed:0, wash:0, talk:0, trick:0, pebble:0},
+      dailyClaimed:false,
+      dailySeenComplete:false,
+      dailyClaimsCount:0,
+      transmuteSeenAvailable:false,
+      achievements:[],
+      activityLog:[],
+      muted:false,
+      pebbles:0,
+      diamonds:0,
+      spentDiamonds:0,
+      prestigeCount:0,
+      owned:Object.fromEntries(ONE_TIME_ITEMS.map(i=>[i.id,false])),
+      diamondOwned:Object.fromEntries(DIAMOND_ITEMS.map(i=>[i.id,false])),
+      lastTickAt:Date.now()
+    };
+  }
+
+  const state = createInitialState();
+  let trickInProgress = false;   // un tour (mini-jeu) est en cours : le bouton est bloqué
+  let currentTrick = null;
+
+  let gameStarted = false; // vrai uniquement quand une partie est en cours
   function save(){
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){/* sandbox : tant pis */}
+    if(!gameStarted) return;
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
   }
   function load(){
     try{
@@ -419,33 +1575,1015 @@
       if(!raw) return false;
       const o = JSON.parse(raw);
       Object.assign(state, o);
+      if(!Number.isFinite(state.bonheur)) state.bonheur=50;
+      if(!Number.isFinite(state.proprete)) state.proprete=50;
+      if(!Number.isFinite(state.lien)) state.lien=0;
+      if(!Number.isFinite(state.bond)) state.bond=0;
+      if(!Number.isFinite(state.fatigue)) state.fatigue=0;
+      if(!Number.isFinite(state.resonance)) state.resonance=0;
+      if(!Number.isFinite(state.hunger)) state.hunger=60;
+      if(!Number.isFinite(state.sleepingUntil)) state.sleepingUntil=0;
+      if(!Number.isFinite(state.lastActionAt)) state.lastActionAt=Date.now();
+      if(!Number.isFinite(state.lastHappinessDecayStepAt)) state.lastHappinessDecayStepAt=Date.now();
+      if(!Number.isFinite(state.lastLienDecayAt)) state.lastLienDecayAt=Date.now();
+      if(!Number.isFinite(state.lastTalkAt)) state.lastTalkAt=0;
+      if(!Number.isFinite(state.dailyClaimsCount)) state.dailyClaimsCount=0;
+      if(typeof state.dailySeenComplete !== "boolean") state.dailySeenComplete=false;
+      if(typeof state.transmuteSeenAvailable !== "boolean") state.transmuteSeenAvailable=false;
+      if(!Number.isFinite(state.pebbles)) state.pebbles=0;
+      if(!Number.isFinite(state.diamonds)) state.diamonds=0;
+      if(!Number.isFinite(state.spentDiamonds)) state.spentDiamonds=0;
+      if(!Number.isFinite(state.prestigeCount)) state.prestigeCount=0;
+      if(!state.owned || typeof state.owned!=="object") state.owned={};
+      ONE_TIME_ITEMS.forEach(u=>{ state.owned[u.id] = !!state.owned[u.id]; });
+      if(!state.diamondOwned || typeof state.diamondOwned!=="object") state.diamondOwned={};
+      DIAMOND_ITEMS.forEach(d=>{ state.diamondOwned[d.id] = !!state.diamondOwned[d.id]; });
+      if(!state.actionTimestamps || typeof state.actionTimestamps!=="object"){
+        state.actionTimestamps={feed:[], wash:[], trick:[]};
+      }
+      if(!Array.isArray(state.dailyMissionIds)) state.dailyMissionIds=[];
+      if(!state.dailyProgress || typeof state.dailyProgress!=="object"){
+        state.dailyProgress={pet:0, feed:0, wash:0, talk:0, trick:0, pebble:0};
+      }
       if(!Array.isArray(state.achievements)) state.achievements=[];
+      if(!Array.isArray(state.activityLog)) state.activityLog=[];
+      if(!Array.isArray(state.activeDays) || !state.activeDays.length) state.activeDays=[dayStamp()];
+      if(!Number.isFinite(state.streakDays) || state.streakDays<1) state.streakDays=1;
+      if(!state.lastActiveDay) state.lastActiveDay=dayStamp();
+      if(!Number.isFinite(state.lastTickAt)) state.lastTickAt=Date.now();
+      syncMultiDayProgress();
+      enforceResonatorFloor();
       return !!state.name;
     }catch(e){ return false; }
   }
 
-  // ---------- DOM ----------
+  function syncMultiDayProgress(){
+    const today = dayStamp();
+    if(!state.activeDays.includes(today)) state.activeDays.push(today);
+    if(state.lastActiveDay !== today){
+      if(state.lastActiveDay === yesterdayStamp()) state.streakDays += 1;
+      else state.streakDays = 1;
+      state.lastActiveDay = today;
+    }
+    if(state.activeDays.length >= 3) unlock("a47");
+    if(state.streakDays >= 5) unlock("a48");
+    if(state.activeDays.length >= 7) unlock("a49");
+    if(state.activeDays.length >= 14) unlock("a50");
+  }
+
   const $=s=>document.querySelector(s);
+  const stageEl=$('.stage');
   const adoptScreen=$('#adoptScreen'), gameScreen=$('#gameScreen');
   const nameField=$('#nameField'), adoptBtn=$('#adoptBtn');
-  const petName=$('#petName'), renameInput=$('#renameInput'), renameBtn=$('#renameBtn');
-  const ageMain=$('#ageMain');
-  const bubble=$('#bubble');
-  const fBonheur=$('#fBonheur'), fProprete=$('#fProprete'), fLien=$('#fLien');
-  const vBonheur=$('#vBonheur'), vProprete=$('#vProprete'), vLien=$('#vLien');
-  const lvlText=$('#lvlText'), footActions=document.querySelectorAll('.act');
+  const petName=$('#petName');
+  const ageMain=$('#ageMain'), rockTierLabel=$('#rockTierLabel');
+  const bubble=$('#bubble'), arena=$('#arena');
+  const rockWrap=$('#rockWrap'), cushionPad=$('#cushionPad');
+  const propBrush=$('#propBrush'), propLamp=$('#propLamp'), propDrill=$('#propDrill'), propLab=$('#propLab'), propMuseum=$('#propMuseum');
+  const fBonheur=$('#fBonheur'), fProprete=$('#fProprete'), fLien=$('#fLien'), fFatigue=$('#fFatigue'), fResonance=$('#fResonance'), fBalance=$('#fBalance');
+  const vBonheur=$('#vBonheur'), vProprete=$('#vProprete'), vLien=$('#vLien'), vFatigue=$('#vFatigue'), vResonance=$('#vResonance'), vBalance=$('#vBalance');
+  const lvlText=$('#lvlText');
+  const fHunger=$('#fHunger'), vHunger=$('#vHunger');
   const soundBtn=$('#soundBtn'), resetBtn=$('#resetBtn');
+  const confirmBackdrop=$('#confirmBackdrop'), cancelResetBtn=$('#cancelResetBtn'), confirmResetBtn=$('#confirmResetBtn');
   const rockEl=$('#rock'), groundShadow=$('#groundShadow');
-  const toasts=$('#toasts'), canvas=$('#fx');
+  const dirtLayer=$('#dirtLayer'), shineLayer=$('#shineLayer');
+  const toasts=$('#toasts'), canvas=$('#fx'), transmuteFlash=$('#transmuteFlash');
+  const hoverTooltip=$('#hoverTooltip');
+  const leftShell=$('#leftShell'), dockDrawer=$('#dockDrawer');
+  const missionsBadge=$('#missionsBadge');
+  const diamondShopBadge=$('#diamondShopBadge');
+  const dockBtns=[...document.querySelectorAll('.dock-btn')];
+  const drawerPanels=[...document.querySelectorAll('.drawer-panel')];
+  const dailyMissions=$('#dailyMissions'), claimMissionsBtn=$('#claimMissionsBtn');
+  const activityJournal=$('#activityJournal');
+  const shopList=$('#shopList'), diamondShopSection=$('#diamondShopSection'), diamondShopList=$('#diamondShopList');
+  const diamondStatus=$('#diamondStatus'), convertDiamondBtn=$('#convertDiamondBtn');
+  const tycoonBar=$('#tycoonBar'), kpiPebbles=$('#kpiPebbles'), kpiRate=$('#kpiRate');
+  const kpiDiamondsBox=$('#kpiDiamondsBox'), kpiDiamonds=$('#kpiDiamonds'), kpiDiamondBonus=$('#kpiDiamondBonus');
+  const kpiTransmutationsBox=$('#kpiTransmutationsBox'), kpiTransmutations=$('#kpiTransmutations'), kpiTransmuteBonus=$('#kpiTransmuteBonus');
+  const rightPanel=$('#rightPanel'), rpTag=$('#rpTag'), rpTitle=$('#rpTitle'), rpSub=$('#rpSub'), mgBox=$('#mgBox'), closeRightPanelBtn=$('#closeRightPanelBtn');
 
-  // face parts
+  function updateRightPanelPosition(){
+    if(!rightPanel.classList.contains('open')) return;
+
+    if(window.innerWidth <= 640){
+      rightPanel.style.left = '';
+      rightPanel.style.top = '';
+      rightPanel.style.width = '';
+      rightPanel.style.transform = '';
+      return;
+    }
+
+    const margin = 14;
+    const stageRect = stageEl ? stageEl.getBoundingClientRect() : null;
+    const rockRight = stageRect ? stageRect.right : (window.innerWidth / 2 + 270);
+    const availableRightSpace = Math.max(0, window.innerWidth - rockRight);
+    const maxAllowedWidth = Math.max(180, availableRightSpace - margin * 2);
+    const panelWidth = Math.min(324, maxAllowedWidth);
+
+    let centerX;
+    if(availableRightSpace >= panelWidth + margin * 2){
+      centerX = rockRight + availableRightSpace / 2;
+    } else {
+      centerX = window.innerWidth - margin - panelWidth / 2;
+    }
+
+    rightPanel.style.width = `${Math.round(panelWidth)}px`;
+    rightPanel.style.left = `${Math.round(centerX)}px`;
+    rightPanel.style.top = '50%';
+    rightPanel.style.transform = 'translate(-50%, -50%)';
+  }
+
+  function renderSoundBtn(){
+    soundBtn.textContent = state.muted ? '🔇' : '🔊';
+    soundBtn.setAttribute('aria-pressed', String(!state.muted));
+  }
+  function clamp(v){ return Math.max(0, Math.min(100, v)); }
+  function isSleeping(){ return Date.now() < (state.sleepingUntil || 0); }
+  function hasTransmutedOnce(){ return (state.prestigeCount || 0) > 0 || (state.diamonds || 0) > 0 || (state.spentDiamonds || 0) > 0; }
+  function hasAntiTimeFatigue(){ return !!state.diamondOwned.d_anti_fatigue; }
+  function hasResonatorFloor(){ return !!state.diamondOwned.d_resonator; }
+
+  function formatSleepRemaining(){
+    const remMs = Math.max(0, (state.sleepingUntil || 0) - Date.now());
+    const totalSec = Math.ceil(remMs / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    const endDate = new Date(state.sleepingUntil || Date.now());
+    const hh = String(endDate.getHours()).padStart(2, '0');
+    const mm = String(endDate.getMinutes()).padStart(2, '0');
+    const ss = String(endDate.getSeconds()).padStart(2, '0');
+    return {
+      countdown: `${min} min ${String(sec).padStart(2, '0')} s`,
+      clock: `${hh}:${mm}:${ss}`
+    };
+  }
+
+  function enforceResonatorFloor(){
+    if(hasResonatorFloor()){
+      if(state.lien < 90) state.lien = 90;
+      if(state.bonheur < 90) state.bonheur = 90;
+    }
+  }
+
+  function fmtNum(n){
+    if(n<1000) return Math.floor(n).toLocaleString('fr-FR');
+    const units=["","k","M","Md","B","T"];
+    let u=0, val=n;
+    while(val>=1000 && u<units.length-1){ val/=1000; u++; }
+    const decimals = val<10 ? 2 : 1, k = Math.pow(10, decimals);
+    return (Math.floor(val*k)/k).toFixed(decimals).replace('.',',')+" "+units[u];
+  }
+
+  function getTransmuteCost(){
+    return Math.round(BASE_TRANSMUTE_COST * Math.pow(TRANSMUTE_COST_GROWTH, Math.max(0, state.prestigeCount)));
+  }
+
+  function canTransmuteNow(){
+    return (state.pebbles || 0) >= getTransmuteCost();
+  }
+
+  function updateDiamondShopBadge(){
+    if(!diamondShopBadge) return;
+    if(!canTransmuteNow()){
+      state.transmuteSeenAvailable = false;
+      diamondShopBadge.classList.remove('visible');
+      return;
+    }
+    if(activeDrawerPanel === 'diamondShop'){
+      state.transmuteSeenAvailable = true;
+      diamondShopBadge.classList.remove('visible');
+      return;
+    }
+    if(!state.transmuteSeenAvailable){
+      diamondShopBadge.classList.add('visible');
+    } else {
+      diamondShopBadge.classList.remove('visible');
+    }
+  }
+
+  function addPebbles(amount){
+    if(amount <= 0) return;
+    state.pebbles += amount;
+    ensureDailyMissions();
+    state.dailyProgress.pebble = (state.dailyProgress.pebble || 0) + amount;
+    checkMilestones();
+  }
+
+  function computeBalance(){
+    const invFatigue = 100 - state.fatigue;
+    return clamp((state.bonheur + state.proprete + state.lien + state.resonance + invFatigue) / 5);
+  }
+
+  function getMaxedStatsInfo(){
+    const maxed = [];
+    if(Math.round(state.bonheur) >= 100) maxed.push("Bonheur 100%");
+    if(Math.round(state.proprete) >= 100) maxed.push("Propreté 100%");
+    if(Math.round(clamp(state.lien)) >= 100) maxed.push("Lien 100%");
+    if(Math.round(state.resonance) >= 100) maxed.push("Résonance 100%");
+    if(Math.round(state.fatigue) <= 0) maxed.push("Fatigue 0%");
+    return { count: maxed.length, labels: maxed };
+  }
+
+  function getTransmuteMultiplier(){
+    return 1 + Math.max(0, state.prestigeCount || 0) * 0.20;
+  }
+
+  function getFatigueFactor(){
+    if(state.fatigue >= 90) return 0.50;
+    if(state.fatigue > 74) return 0.75;
+    if(state.fatigue > 50) return 0.90;
+    return 1.0;
+  }
+
+  function hasHungerLock(){ return !!state.diamondOwned.d_stomach; }
+  function hasCleanLock(){ return !!state.diamondOwned.d_sponge; }
+  function getDiamondMultiplier(){
+    return DIAMOND_ITEMS.reduce((m, d) => m * (state.diamondOwned[d.id] && d.ppsMult ? d.ppsMult : 1), 1);
+  }
+  function getRewardMultiplier(){ return state.diamondOwned.d_prospector ? 2 : 1; }
+  function getOfflineCapSeconds(){ return OFFLINE_CAP_SECONDS * (state.diamondOwned.d_hourglass ? 2 : 1); }
+  /* Cadeau : 10 % du stock, plafonné à 60 s de production (évite l'effet boule de neige) */
+  function giftAmount(){ return Math.floor(Math.min(state.pebbles * 0.10, getEffectivePps() * 60)); }
+
+  function getBasePps(){
+    let pps = 1 / 60;
+    ONE_TIME_ITEMS.forEach(item=>{
+      if(state.owned[item.id]) pps += item.pps;
+    });
+    DIAMOND_ITEMS.forEach(d=>{
+      if(state.diamondOwned[d.id] && d.ppsBonus) pps += d.ppsBonus;
+    });
+    pps += getMaxedStatsInfo().count * STAT_MAXED_BONUS_PPS;
+    return pps;
+  }
+
+  function getEffectivePps(){
+    if(isSleeping()) return 0;
+    return getBasePps() * getTransmuteMultiplier() * getDiamondMultiplier() * getFatigueFactor();
+  }
+
+  function pruneExpiredActionTimestamps(act, windowMs){
+    const now = Date.now();
+    const raw = Array.isArray(state.actionTimestamps[act]) ? state.actionTimestamps[act] : [];
+    const active = raw
+      .filter(ts => Number.isFinite(ts) && (now - ts) < windowMs)
+      .sort((a, b) => a - b);
+    state.actionTimestamps[act] = active;
+    return active;
+  }
+
+  function getRecentActionCount(act, windowMs){
+    return pruneExpiredActionTimestamps(act, windowMs).length;
+  }
+
+  function getRemainingCharges(act){
+    const cfg = ACTION_LIMITS[act];
+    if(!cfg) return null;
+    const used = getRecentActionCount(act, cfg.windowMs);
+    return Math.max(0, cfg.maxCount - used);
+  }
+
+  function getNextChargeRefreshSec(act){
+    const cfg = ACTION_LIMITS[act];
+    if(!cfg) return 0;
+    const active = pruneExpiredActionTimestamps(act, cfg.windowMs);
+    if(!active.length) return 0;
+    const oldestTs = active[0];
+    const remainingMs = (oldestTs + cfg.windowMs) - Date.now();
+    return remainingMs > 0 ? Math.max(1, Math.ceil(remainingMs / 1000)) : 0;
+  }
+
+  function formatDurationShort(totalSec){
+    const s = Math.max(0, Math.floor(totalSec));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    if(m > 0) return `${m}m ${String(rem).padStart(2, '0')}s`;
+    return `${rem}s`;
+  }
+
+  function getTalkCooldownRemainingSec(){
+    const rem = (state.lastTalkAt || 0) + TALK_COOLDOWN_MS - Date.now();
+    return rem > 0 ? Math.ceil(rem / 1000) : 0;
+  }
+
+  function getActionWaitSeconds(act){
+    if(act === 'talk'){
+      return getTalkCooldownRemainingSec();
+    }
+    const cfg = ACTION_LIMITS[act];
+    if(!cfg) return 0;
+    const active = pruneExpiredActionTimestamps(act, cfg.windowMs);
+    if(active.length < cfg.maxCount) return 0;
+    return getNextChargeRefreshSec(act);
+  }
+
+  function syncActionButtons(){
+    const sleeping = isSleeping();
+    document.querySelectorAll('.act').forEach(btn=>{
+      const act = btn.dataset.act;
+      const cfg = ACTION_LIMITS[act];
+      const waitSec = getActionWaitSeconds(act);
+      let disabled = false;
+      let title = "";
+
+      if(sleeping){
+        disabled = true;
+        title = act === 'talk' ? "Impossible de parler pendant le sommeil" : "Indisponible pendant le sommeil";
+      } else if(act === 'trick' && trickInProgress){
+        disabled = true;
+        title = "Un tour est en cours : terminez le mini-jeu";
+      } else if(act === 'talk' && waitSec > 0){
+        disabled = true;
+        title = `Parler disponible dans ${waitSec}s`;
+      } else if(cfg){
+        const remaining = getRemainingCharges(act);
+        const nextSec = getNextChargeRefreshSec(act);
+        if(remaining <= 0){
+          disabled = true;
+          title = `Quota épuisé (0/${cfg.maxCount}) — prochain clic régénéré dans ${formatDurationShort(nextSec)}`;
+        } else if(nextSec > 0){
+          title = `Clics disponibles : ${remaining}/${cfg.maxCount} — prochain clic régénéré dans ${formatDurationShort(nextSec)}`;
+        } else {
+          title = `Clics disponibles : ${remaining}/${cfg.maxCount}`;
+        }
+      }
+
+      btn.disabled = disabled;
+      if(title) btn.title = title;
+      else btn.removeAttribute('title');
+    });
+  }
+
+  let hoverDelayTimer = null;
+
+  function hideActionTooltip(){
+    if(hoverDelayTimer){
+      clearTimeout(hoverDelayTimer);
+      hoverDelayTimer = null;
+    }
+    hoverTooltip.classList.remove('show');
+    hoverTooltip.setAttribute('aria-hidden', 'true');
+  }
+
+  function showActionTooltip(btn){
+    const act = btn.dataset.act;
+    const text = ACTION_EFFECT_HINTS[act];
+    if(!text) return;
+    const rect = btn.getBoundingClientRect();
+    hoverTooltip.textContent = text;
+    hoverTooltip.classList.add('show');
+    hoverTooltip.setAttribute('aria-hidden', 'false');
+
+    const tipRect = hoverTooltip.getBoundingClientRect();
+    let left = rect.left + rect.width / 2;
+    const halfW = tipRect.width / 2 + 8;
+    if(left < halfW) left = halfW;
+    if(left > window.innerWidth - halfW) left = window.innerWidth - halfW;
+
+    let top = rect.top - tipRect.height - 8;
+    if(top < 8) top = rect.bottom + 8;
+
+    hoverTooltip.style.left = left + 'px';
+    hoverTooltip.style.top = top + 'px';
+  }
+
+  document.querySelectorAll('.act').forEach(btn=>{
+    btn.addEventListener('pointerenter', ()=>{
+      hideActionTooltip();
+      hoverDelayTimer = setTimeout(()=>{
+        if(!btn.disabled) showActionTooltip(btn);
+      }, 1000);
+    });
+    btn.addEventListener('pointerleave', hideActionTooltip);
+    btn.addEventListener('pointerdown', hideActionTooltip);
+  });
+
+  const gearProps = document.querySelector('.gear-props');
+  const extraProps = {};
+
+  function renderEquippedAroundRock(){
+    const hasCushion = !!state.owned.cushion;
+    cushionPad.classList.toggle("active", hasCushion);
+    rockWrap.classList.toggle("has-cushion", hasCushion);
+    propBrush.classList.toggle("active", !!state.owned.brush);
+    propLamp.classList.toggle("active", !!state.owned.lamp);
+    propDrill.classList.toggle("active", !!state.owned.drill);
+    propLab.classList.toggle("active", !!state.owned.lab);
+    propMuseum.classList.toggle("active", !!state.owned.museum);
+    ONE_TIME_ITEMS.forEach(u=>{
+      if(!u.slot) return;
+      let el = extraProps[u.id];
+      if(!el){
+        el = document.createElement('div');
+        el.className = 'prop-extra';
+        el.textContent = u.emo;
+        el.style.left = u.slot.left;
+        el.style.top = u.slot.top;
+        gearProps.append(el);
+        extraProps[u.id] = el;
+      }
+      el.style.display = state.owned[u.id] ? 'block' : 'none';
+    });
+  }
+
+  function applyRockAppearance(){
+    const tier = ROCK_TIERS[Math.min(ROCK_TIERS.length-1, state.prestigeCount)];
+    $('#gradStop0').setAttribute('stop-color', tier.stops[0]);
+    $('#gradStop1').setAttribute('stop-color', tier.stops[1]);
+    $('#gradStop2').setAttribute('stop-color', tier.stops[2]);
+    rockTierLabel.textContent = tier.name + " · ensemble depuis l'adoption";
+
+    if(state.proprete < 25){
+      dirtLayer.setAttribute('opacity', '0.95');
+      shineLayer.setAttribute('opacity', '0');
+    } else if(state.proprete <= 50){
+      dirtLayer.setAttribute('opacity', '0.45');
+      shineLayer.setAttribute('opacity', '0');
+    } else if(state.proprete <= 75){
+      dirtLayer.setAttribute('opacity', '0.12');
+      shineLayer.setAttribute('opacity', '0.15');
+    } else {
+      dirtLayer.setAttribute('opacity', '0');
+      shineLayer.setAttribute('opacity', '0.95');
+    }
+  }
+
+  function renderGiftButton(){
+    const existing = arena.querySelector('.gift-btn');
+    if(existing) existing.remove();
+    if(!state.pendingGift) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'gift-btn' + (state.pendingGift.type === 'dirt' ? ' dirt' : '');
+    btn.textContent = state.pendingGift.type === 'dirt'
+      ? '🪨 Cadeau : Terre (inutile)'
+      : `🎁 Cadeau : +${fmtNum(state.pendingGift.amount)} pépites`;
+    btn.addEventListener('click', ()=>{
+      if(!state.pendingGift) return;
+      if(state.pendingGift.type === 'pebbles'){
+        addPebbles(state.pendingGift.amount);
+        unlock("a43");
+        audio(); snd.sparkle(); spawn('spark', 16);
+        say(`cadeau récupéré : +${fmtNum(state.pendingGift.amount)} pépites !`, 2200);
+        logEvent("success", "Cadeau du caillou", `+${fmtNum(state.pendingGift.amount)} pépites récupérées.`, "🎁");
+      } else {
+        unlock("a42");
+        audio(); snd.talk(); spawn('dust', 8);
+        say("voilà de la terre. elle ne sert à rien.", 2400);
+        logEvent("info", "Cadeau de terre", "De la terre sans utilité a été donnée.", "🪨");
+      }
+      state.pendingGift = null;
+      state.lastGiftCheckAt = Date.now();
+      renderGiftButton();
+      refreshTycoonUI();
+      refreshSidePanel();
+      save();
+    });
+    arena.appendChild(btn);
+  }
+
+  function refreshTycoonUI(){
+    const pps = getEffectivePps();
+    const ppm = pps * 60;
+    kpiPebbles.textContent = fmtNum(state.pebbles);
+    if(isSleeping()){
+      const sleepInfo = formatSleepRemaining();
+      kpiRate.textContent = `Sommeil · fin dans ${sleepInfo.countdown} (${sleepInfo.clock})`;
+    } else if(ppm < 10){
+      kpiRate.textContent = "+" + ppm.toFixed(1).replace('.',',') + " /min";
+    } else {
+      if(pps < 10) kpiRate.textContent = "+" + pps.toFixed(1).replace('.',',') + " /s";
+      else kpiRate.textContent = "+" + fmtNum(pps) + " /s";
+    }
+
+    const showDiamonds = hasTransmutedOnce();
+    const showTransmutations = (state.prestigeCount || 0) > 0;
+
+    kpiDiamondsBox.style.display = showDiamonds ? "" : "none";
+    kpiTransmutationsBox.style.display = showTransmutations ? "" : "none";
+
+    tycoonBar.classList.toggle("has-diamonds", showDiamonds && !showTransmutations);
+    tycoonBar.classList.toggle("has-transmutations", showTransmutations);
+
+    if(showDiamonds){
+      kpiDiamonds.textContent = state.diamonds + " 💎";
+      kpiDiamondBonus.textContent = "";
+    }
+    if(showTransmutations){
+      kpiTransmutations.textContent = String(state.prestigeCount);
+      kpiTransmuteBonus.textContent = "+" + (state.prestigeCount * 20) + "% pépites";
+    }
+
+    const transmuteCost = getTransmuteCost();
+    const countP = state.prestigeCount || 0;
+    diamondStatus.textContent = `${state.diamonds} Diamant${state.diamonds>1?"s":""} · ${countP} transmutation${countP>1?"s":""} (+${countP*20}% pépites)`;
+    convertDiamondBtn.textContent = `Transmuter ${fmtNum(transmuteCost)} pépites → +1 Diamant`;
+    convertDiamondBtn.disabled = state.pebbles < transmuteCost;
+
+    diamondShopSection.style.display = showDiamonds ? "block" : "none";
+
+    updateShops();
+
+
+    renderEquippedAroundRock();
+    syncActionButtons();
+    updateDiamondShopBadge();
+  }
+
+  function playTransmuteAnimation(){
+    spawn('spark', 28);
+    if(reduceMotion) return;
+    transmuteFlash.classList.remove('active');
+    void transmuteFlash.offsetWidth;
+    transmuteFlash.classList.add('active');
+
+    wiggling = true;
+    const anim = rockEl.animate(
+      [
+        {transform:'scale(1) rotate(0deg)', filter:'brightness(1)'},
+        {transform:'scale(1.16) rotate(-7deg)', filter:'brightness(1.55)'},
+        {transform:'scale(0.92) rotate(7deg)', filter:'brightness(1.35)'},
+        {transform:'scale(1.08) rotate(-3deg)', filter:'brightness(1.2)'},
+        {transform:'scale(1) rotate(0deg)', filter:'brightness(1)'}
+      ],
+      {duration: 950, easing:'cubic-bezier(.22,.9,.28,1)'}
+    );
+    anim.onfinish = ()=>{ wiggling = false; };
+  }
+
+  function buyOneTimeItem(id){
+    if(state.owned[id]) return;
+    const u = ONE_TIME_ITEMS.find(x=>x.id===id);
+    if(!u || state.pebbles < u.cost) return;
+    state.pebbles -= u.cost;
+    state.owned[id] = true;
+    audio(); snd.feed(); spawn('spark', 12); react('hop');
+    say(u.emo + " " + u.name + " installé !", 1800);
+    logEvent("info", "Achat : " + u.name, u.desc + " (achat unique).", u.emo);
+    checkMilestones();
+    refreshTycoonUI();
+    save();
+  }
+
+  /* Boutiques : DOM créé une seule fois, ensuite simple mise à jour (pas de clic ni de focus perdu) */
+  const shopRefs = {};
+
+  function buildShopCard(item, listEl, onBuy){
+    const card = document.createElement("div");
+    card.className = "shop-item";
+    const top = document.createElement("div");
+    top.className = "shop-top";
+    const title = document.createElement("span");
+    title.textContent = `${item.emo} ${item.name}`;
+    const tag = document.createElement("span");
+    tag.className = "shop-owned";
+    top.append(title, tag);
+    const desc = document.createElement("div");
+    desc.className = "shop-desc";
+    desc.textContent = item.desc;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "shop-buy";
+    const left = document.createElement("span");
+    const right = document.createElement("span");
+    btn.append(left, right);
+    btn.addEventListener("click", () => onBuy(item.id));
+    card.append(top, desc, btn);
+    listEl.append(card);
+    shopRefs[item.id] = {tag, btn, left, right};
+  }
+
+  function buildShops(){
+    shopList.innerHTML = "";
+    diamondShopList.innerHTML = "";
+    ONE_TIME_ITEMS.forEach(u => buildShopCard(u, shopList, buyOneTimeItem));
+    DIAMOND_ITEMS.forEach(d => buildShopCard(d, diamondShopList, buyDiamondItem));
+  }
+
+  function updateShops(){
+    ONE_TIME_ITEMS.forEach(u => {
+      const r = shopRefs[u.id]; if(!r) return;
+      const owned = !!state.owned[u.id];
+      r.tag.textContent   = owned ? "Acquis ✓" : "Unique";
+      r.left.textContent  = owned ? "Déjà possédé" : "Acheter";
+      r.right.textContent = owned ? "—" : `${fmtNum(u.cost)} pépites`;
+      r.btn.disabled      = owned || state.pebbles < u.cost;
+    });
+    DIAMOND_ITEMS.forEach(d => {
+      const r = shopRefs[d.id]; if(!r) return;
+      const owned = !!state.diamondOwned[d.id];
+      r.tag.textContent   = owned ? "Acquis ✓" : `${d.cost} 💎`;
+      r.left.textContent  = owned ? "Déjà acquis" : "Acheter avec Diamants";
+      r.right.textContent = owned ? "—" : `${d.cost} 💎`;
+      r.btn.disabled      = owned || state.diamonds < d.cost;
+    });
+  }
+
+  convertDiamondBtn.addEventListener("click", ()=>{
+    const cost = getTransmuteCost();
+    if(state.pebbles < cost) return;
+    state.pebbles = 0;
+    ONE_TIME_ITEMS.forEach(item=>{ state.owned[item.id] = false; });
+    state.diamonds += 1;
+    state.prestigeCount += 1;
+    state.transmuteSeenAvailable = false;
+    audio(); snd.level();
+    playTransmuteAnimation();
+    applyRockAppearance();
+    checkMilestones();
+    say("transmutation accomplie ! bonus permanent +20% cumulé.", 2800);
+    toast("💎", "Transmutation réussie", `+1 Diamant et +20% permanents (total : +${state.prestigeCount * 20}%). Prochain coût : ${fmtNum(getTransmuteCost())} pépites.`);
+    logEvent("success", "Transmutation #" + state.prestigeCount, `Coût ${fmtNum(cost)} pépites → +1 Diamant et +20% permanents (+${state.prestigeCount * 20}% total).`, "💎");
+    refreshTycoonUI();
+    refreshSidePanel();
+    updateDiamondShopBadge();
+    save();
+  });
+
+  function buyDiamondItem(id){
+    if(state.diamondOwned[id]) return;
+    const d = DIAMOND_ITEMS.find(x=>x.id===id);
+    if(!d || state.diamonds < d.cost) return;
+    state.diamonds -= d.cost;
+    state.spentDiamonds += d.cost;
+    state.diamondOwned[id] = true;
+    enforceResonatorFloor();
+    audio(); snd.sparkle(); spawn('spark', 16); react('hop');
+    say(d.emo + " " + d.name + " activé !", 2000);
+    logEvent("info", "Boutique Diamants : " + d.name, d.desc, d.emo);
+    checkMilestones();
+    refreshAll();
+    refreshTycoonUI();
+    save();
+  }
+
+  let activeMinigameTimer = null;
+  let activeMinigameAnim = null;
+  let nextMinigameIndex = 0;
+
+  function clearMinigameTimers(){
+    if(activeMinigameTimer){ clearTimeout(activeMinigameTimer); activeMinigameTimer = null; }
+    if(activeMinigameAnim){ cancelAnimationFrame(activeMinigameAnim); activeMinigameAnim = null; }
+  }
+
+  function closeRightPanel(){
+    clearMinigameTimers();
+    rightPanel.classList.remove('open');
+    if(trickInProgress) completeTrick(false);   // fermer / abandonner un tour en cours = échec
+  }
+
+  closeRightPanelBtn.addEventListener('click', closeRightPanel);
+
+  function rollRandomDifficulty(){
+    const pool = ['easy', 'medium', 'hard'];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  /* Gain minimal = base ; au-delà de 10 pépites/s il vaut ~base/10 secondes de production */
+  function scaledReward(base){
+    return getRewardMultiplier() * Math.max(base, Math.round(base * getBasePps() * getTransmuteMultiplier() * getDiamondMultiplier() / 10));
+  }
+
+  function rewardForDifficulty(diff){
+    if(diff === 'easy') return scaledReward(60);
+    if(diff === 'medium') return scaledReward(120);
+    return scaledReward(240);
+  }
+
+  function difficultyLabel(diff){
+    const reward = fmtNum(rewardForDifficulty(diff));
+    if(diff === 'easy') return `Facile · +${reward} pépites`;
+    if(diff === 'medium') return `Moyen · +${reward} pépites`;
+    return `Difficile · +${reward} pépites`;
+  }
+
+  function getHardestMineralReward(diff){
+    if(diff === 'easy') return scaledReward(100);
+    if(diff === 'medium') return scaledReward(200);
+    return scaledReward(400);
+  }
+
+  function hardestMineralDifficultyLabel(diff, count){
+    const reward = getHardestMineralReward(diff);
+    const tier = diff === 'easy' ? 'Facile' : (diff === 'medium' ? 'Moyen' : 'Difficile');
+    return `${tier} · ${count} choix · +${fmtNum(reward)} pépites`;
+  }
+
+  function finishMinigame(won, reward, message){
+    clearMinigameTimers();
+    const statusEl = mgBox.querySelector('.mg-status');
+    if(won){
+      addPebbles(reward);
+      audio(); snd.sparkle(); spawn('spark', 18);
+      if(statusEl) statusEl.textContent = `${message} (+${fmtNum(reward)} pépites gagnées !)`;
+      toast("🎓", "Mini-jeu remporté", `+${fmtNum(reward)} pépites ajoutées.`);
+      logEvent("success", "Mini-jeu gagné", `${message} : +${fmtNum(reward)} pépites.`, "🏆");
+      refreshTycoonUI();
+      refreshSidePanel();
+      save();
+    } else {
+      if(statusEl) statusEl.textContent = `${message} (+0 pépite bonus)`;
+    }
+    completeTrick(won);
+  }
+
+  function renderDigMinigame(){
+    clearMinigameTimers();
+    rightPanel.classList.add('open');
+    updateRightPanelPosition();
+    const reward = scaledReward(400);
+    rpTag.textContent = "MINI-JEU · PROSPECTION";
+    rpTitle.textContent = "Creusage des pépites dorées";
+    rpSub.textContent = "3 pépites dorées se cachent sous 9 cases. Choisissez une case ; toutes les cases se révéleront.";
+    mgBox.innerHTML = "";
+
+    const badge = document.createElement('div');
+    badge.className = 'mg-tag-badge';
+    badge.textContent = `Pépite dorée : +${fmtNum(reward)} pépites`;
+
+    const goldIndices = new Set();
+    while(goldIndices.size < 3){
+      goldIndices.add(Math.floor(Math.random() * 9));
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'mg-grid';
+    const buttons = [];
+
+    const st = document.createElement('div');
+    st.className = 'mg-status';
+    st.textContent = "Cliquez sur la case de votre choix.";
+
+    let resolved = false;
+
+    function revealAll(pickedIndex){
+      buttons.forEach((btn, idx)=>{
+        btn.disabled = true;
+        const isGold = goldIndices.has(idx);
+        if(isGold){
+          btn.textContent = '🪙';
+          btn.classList.add('gold-hit');
+          if(idx === pickedIndex) btn.classList.add('picked-good');
+        } else {
+          btn.textContent = '·';
+          btn.classList.add('empty-tile');
+          if(idx === pickedIndex) btn.classList.add('picked-bad');
+        }
+      });
+    }
+
+    for(let i = 0; i < 9; i++){
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mg-btn';
+      b.textContent = '⛏️';
+      b.addEventListener('click', ()=>{
+        if(resolved) return;
+        resolved = true;
+        revealAll(i);
+        if(goldIndices.has(i)){
+          finishMinigame(true, reward, "Pépite dorée trouvée");
+        } else {
+          finishMinigame(false, reward, "Case vide");
+        }
+      });
+      buttons.push(b);
+      grid.append(b);
+    }
+
+    mgBox.append(badge, grid, st);
+  }
+
+  function renderCursorMinigame(){
+    clearMinigameTimers();
+    rightPanel.classList.add('open');
+    updateRightPanelPosition();
+    const diff = rollRandomDifficulty();
+    const reward = rewardForDifficulty(diff);
+    const speed = diff === 'easy' ? 1.3 : (diff === 'medium' ? 2.35 : 3.65);
+
+    rpTag.textContent = "MINI-JEU ";
+    rpTitle.textContent = "Frappe de pioche";
+    rpSub.textContent = "Arrêtez le curseur dans la zone verte centrale.";
+    mgBox.innerHTML = "";
+
+    const badge = document.createElement('div');
+    badge.className = 'mg-tag-badge';
+    badge.textContent = `Difficulté : ${difficultyLabel(diff)}`;
+
+    const track = document.createElement('div');
+    track.className = 'mg-bar-track';
+    const zone = document.createElement('div');
+    zone.className = 'mg-bar-zone';
+    const cursor = document.createElement('div');
+    cursor.className = 'mg-bar-cursor';
+    track.append(zone, cursor);
+
+    const hitBtn = document.createElement('button');
+    hitBtn.type = 'button';
+    hitBtn.className = 'btn';
+    hitBtn.style.width = '100%';
+    hitBtn.textContent = "Arrêter le curseur";
+
+    const st = document.createElement('div');
+    st.className = 'mg-status';
+    st.textContent = "Visez la zone verte.";
+    mgBox.append(badge, track, hitBtn, st);
+
+    let pos = 0;
+    let dir = 1;
+    let stopped = false;
+
+    let lastTs = null;
+    function stepBar(ts){
+      if(stopped) return;
+      if(lastTs === null) lastTs = ts;
+      const frames = Math.min(3, Math.max(0, (ts - lastTs) / 16.667)); // équivalent « images à 60 Hz »
+      lastTs = ts;
+      pos += dir * speed * frames;
+      if(pos >= 100){ pos = 100; dir = -1; }
+      if(pos <= 0){ pos = 0; dir = 1; }
+      cursor.style.left = pos + '%';
+      activeMinigameAnim = requestAnimationFrame(stepBar);
+    }
+    activeMinigameAnim = requestAnimationFrame(stepBar);
+
+    hitBtn.addEventListener('click', ()=>{
+      if(stopped) return;
+      stopped = true;
+      hitBtn.disabled = true;
+      if(pos >= 38 && pos <= 62){
+        finishMinigame(true, reward, "Frappe réussie");
+      } else {
+        finishMinigame(false, reward, "Tir manqué");
+      }
+    });
+  }
+
+  function renderHardestMineralMinigame(){
+    clearMinigameTimers();
+    rightPanel.classList.add('open');
+    updateRightPanelPosition();
+
+    const diff = rollRandomDifficulty();
+    const reward = getHardestMineralReward(diff);
+    const count = diff === 'easy' ? 2 : (diff === 'medium' ? 3 : 4);
+
+    const pool = EARTH_MINERALS.slice();
+    for(let i = pool.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const choices = pool.slice(0, count);
+
+    const hardestMineral = choices.reduce((best, item) => (item.mohs > best.mohs ? item : best), choices[0]);
+
+    rpTag.textContent = "MINI-JEU · DURETÉ MINÉRALE";
+    rpTitle.textContent = "Quel minéral est le plus dur ?";
+    rpSub.textContent = "Sélectionnez le minéral le plus dur parmi les propositions.";
+    mgBox.innerHTML = "";
+
+    const badge = document.createElement('div');
+    badge.className = 'mg-tag-badge';
+    badge.textContent = hardestMineralDifficultyLabel(diff, count);
+
+    const listEl = document.createElement('div');
+    listEl.className = 'mg-choice-list';
+
+    const st = document.createElement('div');
+    st.className = 'mg-status';
+    st.textContent = "Cliquez sur le minéral le plus dur.";
+
+    const buttons = [];
+    let resolved = false;
+
+    choices.forEach(mineral => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mg-choice-btn';
+      btn.textContent = mineral.name;
+
+      btn.addEventListener('click', () => {
+        if(resolved) return;
+        resolved = true;
+
+        buttons.forEach((b, idx) => {
+          b.disabled = true;
+          if(choices[idx].name === hardestMineral.name){
+            b.classList.add('picked-good');
+          } else if(idx === choices.indexOf(mineral)){
+            b.classList.add('picked-bad');
+          }
+        });
+
+        if(mineral.name === hardestMineral.name){
+          finishMinigame(true, reward, `${mineral.name} est bien le plus dur`);
+        } else {
+          finishMinigame(false, reward, `Le plus dur était ${hardestMineral.name}`);
+        }
+      });
+
+      buttons.push(btn);
+      listEl.append(btn);
+    });
+
+    mgBox.append(badge, listEl, st);
+  }
+
+  function launchMinigameNow(){
+    const idx = nextMinigameIndex % 3;
+    nextMinigameIndex += 1;
+    if(idx === 0){
+      renderDigMinigame();
+    } else if(idx === 1){
+      renderCursorMinigame();
+    } else {
+      renderHardestMineralMinigame();
+    }
+  }
+
+  function showFatigueSleepWarning(onProceed){
+    clearMinigameTimers();
+    rightPanel.classList.add('open');
+    updateRightPanelPosition();
+    rpTag.textContent = "AVERTISSEMENT DE FATIGUE";
+    rpTitle.textContent = "Risque de sommeil immédiat";
+    rpSub.textContent = `La fatigue est à ${Math.round(state.fatigue)}%. Apprendre un tour ajoute +20% de fatigue et fera dormir votre caillou pendant 2 minutes.`;
+    mgBox.innerHTML = "";
+
+    const msg = document.createElement('div');
+    msg.className = 'mg-status';
+    msg.textContent = "Voulez-vous faire le tour malgré ce risque de sommeil ?";
+
+    const actions = document.createElement('div');
+    actions.className = 'mg-warn-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn secondary';
+    cancelBtn.textContent = 'Annuler';
+    cancelBtn.addEventListener('click', closeRightPanel);
+
+    const goBtn = document.createElement('button');
+    goBtn.type = 'button';
+    goBtn.className = 'btn';
+    goBtn.textContent = 'Faire le tour';
+    goBtn.addEventListener('click', ()=>{
+      onProceed();
+    });
+
+    actions.append(cancelBtn, goBtn);
+    mgBox.append(msg, actions);
+  }
+
+  let activeDrawerPanel = null;
+
+  function syncDockAria(){
+    dockBtns.forEach(b=>b.setAttribute('aria-expanded', String(b.dataset.panel === activeDrawerPanel)));
+  }
+
+  function setDrawerPanel(panelName){
+    closeRightPanel();
+    if(!panelName || activeDrawerPanel === panelName){
+      activeDrawerPanel = null;
+      dockDrawer.classList.remove('open');
+      dockBtns.forEach(b=>b.classList.remove('active'));
+      syncDockAria();
+      updateDiamondShopBadge();
+      return;
+    }
+    activeDrawerPanel = panelName;
+    if(panelName === 'missions' && missionsComplete() && !state.dailyClaimed){
+      state.dailySeenComplete = true;
+      updateMissionsBadge();
+      save();
+    }
+    if(panelName === 'diamondShop' && canTransmuteNow()){
+      state.transmuteSeenAvailable = true;
+      updateDiamondShopBadge();
+      save();
+    }
+    dockDrawer.classList.add('open');
+    dockBtns.forEach(b=>b.classList.toggle('active', b.dataset.panel === panelName));
+    syncDockAria();
+    drawerPanels.forEach(p=>p.classList.toggle('active', p.dataset.panelContent === panelName));
+    updateDiamondShopBadge();
+  }
+
+  dockBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>setDrawerPanel(btn.dataset.panel));
+  });
+  document.querySelectorAll('[data-close-drawer]').forEach(btn=>{
+    btn.addEventListener('click', ()=>setDrawerPanel(null));
+  });
+
   const eyesOpen=$('#eyesOpen'), eyesHappy=$('#eyesHappy'), eyesClosed=$('#eyesClosed');
   const brows=$('#brows'), cheeks=$('#cheeks'), mouth=$('#mouth'), mouthO=$('#mouthO');
-
-  // sprout parts
   const sprout=$('#sprout'), spLeafL=$('#spLeafL'), spLeafR=$('#spLeafR'), spBud=$('#spBud'), spFlower=$('#spFlower');
 
-  // ---------- audio (Web Audio, généré, zéro fichier) ----------
   let actx=null, master=null;
   function audio(){
     if(actx) return actx;
@@ -488,48 +2626,43 @@
     level(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.16,'triangle',0.5),i*90)); }
   };
 
-  // ---------- copy ----------
   const THOUGHTS = [
     "…",
     "Je réfléchissais. Ça fait 4 milliards d'années que je réfléchis. J'y suis presque.",
-    "T'es mon meilleur ami. T'es aussi le seul qui me parle. Mais surtout le meilleur.",
+    "Les pépites passent, les transmutations restent.",
     "On sort ce soir ? Ah non. Je suis un caillou. On reste.",
-    "J'ai rêvé cette nuit. C'était sombre. Comme toujours. Mais c'était cosy.",
-    "Tu sais ce qui est bien, avec moi ? Je ne te jugerai jamais. Je ne peux pas. C'est physiologique.",
-    "Demande-moi n'importe quoi. La réponse sera : du silence minéral, et beaucoup d'amour.",
-    "Je me sens lourd aujourd'hui. Comme hier. Comme depuis le Précambrien.",
-    "Et si j'étais un galet ? … Non. Je suis un caillou. Assume, mon gars.",
+    "Je ne te jugerai jamais. C'est géologique.",
     "Caillou power.",
-    "Écoute-moi bien : tu n'entendras absolument rien. C'est ma façon de t'aimer.",
-    "Pas bougé de la journée. Record personnel. Encore.",
-    "Un conseil ? Reste solide. C'est tout ce que je sais faire.",
-    "Je garde tous tes secrets. Dans une faille, là, à gauche. Personne ne les trouvera.",
-    "Belle équipe, toi et moi. Toi tu fais tout. Moi je supervise.",
-    "Je suis pas du genre à m'emballer. Je suis du genre… sédimentaire.",
-    "Mon thérapeute dit que je devrais m'ouvrir. Compliqué : je suis compact.",
-    "T'inquiète pas pour moi. Je serai là dans un million d'années. Toi… on en reparle.",
-    "Des jours avec, des jours sans. Aujourd'hui, c'est un jour caillou.",
-    "Je t'aime gros comme une montagne. Une petite montagne. Mais une montagne.",
-    "Pose-moi où tu veux. Je m'adapte. Enfin, je reste. Mais avec le sourire.",
-    "Tu sens cette connexion ? Moi non plus. Mais l'intention est là.",
-    "Roches & roll.",
-    "Grande décision aujourd'hui : rien. Comme prévu.",
-    "Je peux pas te faire de câlin. Je peux juste être lourd contre toi. Ça compte ?",
-    "Patience. Je suis la preuve vivante que rien ne presse. Surtout pas moi.",
-    "On est bien, là. Toi qui me parles, moi qui existe. Le minimum syndical de l'amitié.",
-    "Je suis de pierre. Mais mon cœur aussi. C'est pour ça qu'il tiendra toujours."
+    "Pas bougé de la journée. Record personnel.",
+    "Je fais de mon mieux. Mon mieux est immobile.",
+    "Les humains appellent ça procrastiner. J'appelle ça la sédimentation.",
+    "Je n'ai aucune ambition. Je suis déjà au sommet de ma carrière géologique.",
+    "Je ne suis pas têtu. Je suis granitique.",
+    "Ne remets pas à demain ce que la tectonique fera dans 50 millions d'années.",
+    "Mon rêve ? Devenir fossile influencer.",
+    "Les montagnes aussi étaient jeunes un jour.",
+    "Je suis riche en minéraux et pauvre en problèmes.",
+    "La confiance, c'est comme le granite : ça se construit lentement.",
+    "J'ai l'énergie d'une géode fermée.",
+    "Encore une journée productive à ne pas photosynthétiser.",
+    "Ma zone de confort pèse plusieurs tonnes.",
+    "J'ai atteint la paix intérieure. Et extérieure aussi.",
+    "Tout le monde parle d'évolution personnelle. Moi j'attends la pression et la chaleur.",
+    "Le bonheur, c'est un bon emplacement et peu d'érosion.",
+    "J'étais là avant que ce soit tendance.",
+    "Je suis plus solide émotionnellement que la plupart des mammifères.",
+    "Petit caillou aujourd'hui, montagne demain."
   ];
   const REACT = {
-    pet:["mmh.","♥","encore.","*frémit légèrement* (non)","c'est agréable. je crois.","continue, humain."],
-    feed:["miam. (pour le geste)","merci. je digérerai rien, mais merci.","*ne mâche pas*","délicieux. probablement."],
-    wash:["aaah, frais.","tout propre !","*brille un peu* (illusion)","je me sentais poussiéreux."]
+    pet:["mmh.","♥","encore.","*frémit légèrement*", "j'apprécie ce contact minéral.", "on devient proches. Géologiquement parlant.", "tu es officiellement mon humain préféré.", "je me sens poli. Pas poliment, poli."],
+    feed:["miam. (pour le geste)","merci. *ne mâche pas*","délicieux. probablement.", "je n'avais pas faim. Mais merci.", "croc. Enfin... façon de parler."],
+    wash:["aaah, frais.","tout propre !","je me sentais poussiéreux.", "*brillance +1*", "on pourrait presque voir son reflet sur moi.", "je suis prêt pour une exposition au musée."]
   };
   const TRICKS = [
     {cmd:"Assis !", ok:"✓ déjà assis. talent inné."},
     {cmd:"Pas bouger !", ok:"✓ maîtrisé à la perfection."},
     {cmd:"Le mort !", ok:"✓ très convaincant. trop, peut-être."},
-    {cmd:"Donne la patte !", ok:"il n'a pas de patte. mais le regard est sincère."},
-    {cmd:"Roule !", ok:"il n'a pas roulé. mais il y a pensé très fort."}
+    {cmd:"Donne la patte !", ok:"il n'a pas de patte. mais le regard est sincère."}
   ];
   const LEVELS = [
     {min:0,  title:"Connaissances minérales"},
@@ -539,62 +2672,368 @@
     {min:70, title:"Meilleurs amis pour toujours"},
     {min:110,title:"Âmes sœurs (l'une est inerte)"}
   ];
-  const ACHIEVEMENTS = {
-    adopt:   {emo:"🪨", t:"Responsabilité minérale", d:"Vous êtes l'heureux propriétaire d'un caillou."},
-    pet1:    {emo:"🫳", t:"Premier contact", d:"Vous avez caressé un caillou. Volontairement."},
-    pet25:   {emo:"💗", t:"Tendre cailloutier", d:"25 caresses. Le caillou n'a pas bougé. Le cœur, si."},
-    pet100:  {emo:"🌟", t:"Main de velours", d:"100 caresses. Toujours un caillou. Toujours là."},
-    talk1:   {emo:"💬", t:"Dialogue de sourds", d:"Vous parlez à un caillou. Il vous écoute. C'est déjà ça."},
-    talk10:  {emo:"🤫", t:"Confident", d:"Il connaît tous vos secrets. Il ne dira rien. Jamais."},
-    feed1:   {emo:"🍽️", t:"Bon appétit", d:"Vous avez nourri un caillou. C'est l'intention qui compte."},
-    wash1:   {emo:"🫧", t:"Comme un sou neuf", d:"Caillou lavé. Caillou heureux. Caillou mouillé."},
-    trick1:  {emo:"🎓", t:"Bon caillou !", d:"Vous lui avez appris à rester immobile. Quel talent."},
-    bonheurMax:{emo:"☀️", t:"Plénitude", d:"Bonheur au maximum. Il rayonne (métaphoriquement)."},
-    bff:     {emo:"🤝", t:"Meilleurs amis", d:"Vous et un caillou. Contre le monde entier."},
-    time5:   {emo:"⏳", t:"L'épreuve du temps", d:"5 minutes ensemble. Sur 4,5 milliards d'années. Bon début."}
-  };
 
-  // ---------- screen flow ----------
+  function pickRandomDailyIds(){
+    const copy = DAILY_MISSIONS_POOL.slice();
+    for(let i = copy.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy.slice(0, 3).map(m => m.id);
+  }
+
+  function getActiveDailyMissions(){
+    ensureDailyMissions();
+    return state.dailyMissionIds
+      .map(id => DAILY_MISSIONS_POOL.find(m => m.id === id))
+      .filter(Boolean);
+  }
+
+  function logEvent(type,title,desc,emo){
+    state.activityLog.unshift({type,title,desc,emo:emo||"•",at:Date.now()});
+    state.activityLog=state.activityLog.slice(0,20);
+    refreshSidePanel();
+  }
+  function ensureDailyMissions(){
+    syncMultiDayProgress();
+    const today=dayStamp();
+    if(state.dailyDate!==today || !Array.isArray(state.dailyMissionIds) || state.dailyMissionIds.length !== 3){
+      state.dailyDate=today;
+      state.dailyMissionIds=pickRandomDailyIds();
+      state.dailyProgress={pet:0, feed:0, wash:0, talk:0, trick:0, pebble:0};
+      state.dailyClaimed=false;
+      state.dailySeenComplete=false;
+    }
+  }
+  function missionProgress(m){
+    const current = Number(state.dailyProgress[m.metric] || 0);
+    return Math.min(m.goal, Math.floor(current));
+  }
+  function missionsComplete(){
+    const list = getActiveDailyMissions();
+    return list.length > 0 && list.every(m => missionProgress(m) >= m.goal);
+  }
+  function updateMissionsBadge(){
+    const allDone = missionsComplete();
+    if(!allDone || state.dailyClaimed){
+      state.dailySeenComplete = false;
+      missionsBadge.classList.remove('visible');
+      return;
+    }
+    if(activeDrawerPanel === 'missions'){
+      state.dailySeenComplete = true;
+      missionsBadge.classList.remove('visible');
+      return;
+    }
+    if(!state.dailySeenComplete){
+      missionsBadge.classList.add('visible');
+    } else {
+      missionsBadge.classList.remove('visible');
+    }
+  }
+  function getTotalDailyPebbleReward(){
+    return getActiveDailyMissions().reduce((sum, m) => sum + scaledReward(m.pebbles), 0);
+  }
+
+  function buildAchievementRow(id, a, unlocked){
+    const isSecret = !!a.secret;
+    const isSecretHidden = isSecret && !unlocked;
+    const item=document.createElement("div");
+    item.className="achievement-item "+(unlocked?(isSecret?"unlocked secret-unlocked":"unlocked"):(isSecretHidden?"secret-locked locked":"locked"));
+
+    const emo=document.createElement("span");
+    emo.className="achievement-emo";
+    emo.textContent = a.emo;
+
+    const meta=document.createElement("div");
+    meta.className="achievement-meta";
+
+    const title=document.createElement("span");
+    title.className="achievement-title";
+    title.textContent = a.t;
+
+    const desc=document.createElement("span");
+    desc.className="achievement-desc";
+    desc.textContent = isSecretHidden ? "Condition cachée jusqu'au déblocage." : a.d;
+
+    const badge=document.createElement("span");
+    badge.className="achievement-badge";
+    if(unlocked){
+      badge.textContent = isSecret ? "Secret ✓" : "Débloqué";
+    } else {
+      badge.textContent = isSecret ? "Secret" : "À faire";
+    }
+
+    meta.append(title,desc);
+    item.append(emo,meta,badge);
+    return item;
+  }
+
+  function refreshSidePanel(){
+    ensureDailyMissions();
+    updateMissionsBadge();
+    updateDiamondShopBadge();
+    const achievementsOrderedList=document.getElementById("achievementsOrderedList");
+    const achievementsHeaderTitle=document.getElementById("achievementsHeaderTitle");
+    const entries=Object.entries(ACHIEVEMENTS);
+    const locked=entries.filter(([id])=>!state.achievements.includes(id));
+    const unlocked=entries.filter(([id])=>state.achievements.includes(id));
+
+    achievementsOrderedList.innerHTML="";
+    locked.forEach(([id,a])=>achievementsOrderedList.append(buildAchievementRow(id,a,false)));
+    unlocked.forEach(([id,a])=>achievementsOrderedList.append(buildAchievementRow(id,a,true)));
+    achievementsHeaderTitle.textContent=`SUCCÈS (${unlocked.length}/${entries.length} · ${state.activeDays.length}j)`;
+
+    const activeMissions = getActiveDailyMissions();
+    dailyMissions.innerHTML="";
+    activeMissions.forEach(m=>{
+      const n=missionProgress(m), done=n>=m.goal;
+      const el=document.createElement("div");
+      el.className="mission"+(done?" done":"");
+
+      const top=document.createElement("div");
+      top.className="mission-top";
+      const titleWrap=document.createElement("div");
+      titleWrap.className="mission-title-wrap";
+      const emo=document.createElement("span");
+      emo.className="mission-emo";
+      emo.textContent=m.emo;
+      const title=document.createElement("span");
+      title.textContent=m.title+(done?" ✓":"");
+      titleWrap.append(emo,title);
+
+      const badge=document.createElement("span");
+      badge.className="mission-tier "+m.tierClass;
+      badge.textContent=m.tier;
+      top.append(titleWrap, badge);
+
+      const desc=document.createElement("p");
+      desc.className="mission-desc";
+      desc.textContent=m.desc;
+
+      const track=document.createElement("div");
+      track.className="mission-track";
+      const fill=document.createElement("div");
+      fill.className="mission-fill";
+      fill.style.width=(n/m.goal*100)+"%";
+      track.append(fill);
+
+      const foot=document.createElement("div");
+      foot.className="mission-foot";
+      const count=document.createElement("span");
+      count.textContent=fmtNum(n)+" / "+fmtNum(m.goal);
+      const reward=document.createElement("span");
+      reward.textContent="+"+fmtNum(scaledReward(m.pebbles))+" pépites";
+      foot.append(count,reward);
+
+      el.append(top,desc,track,foot);
+      dailyMissions.append(el);
+    });
+
+    const totalReward = getTotalDailyPebbleReward();
+    const ready=missionsComplete()&&!state.dailyClaimed;
+    claimMissionsBtn.disabled=!ready;
+    claimMissionsBtn.textContent = state.dailyClaimed
+      ? "Récompense récupérée ✓"
+      : ready
+        ? `Récupérer +${fmtNum(totalReward)} pépites`
+        : `Terminer les 3 défis (+${fmtNum(totalReward)} pépites)`;
+
+    activityJournal.innerHTML="";
+    if(!state.activityLog.length){
+      const empty=document.createElement("p");
+      empty.className="side-empty";
+      empty.textContent="Ton aventure commence ici.";
+      activityJournal.append(empty);
+    }
+    state.activityLog.slice(0,5).forEach(item=>{
+      const row=document.createElement("div");row.className="journal-item";
+      const icon=document.createElement("span");icon.className="journal-icon";icon.textContent=item.emo;
+      const content=document.createElement("div"),strong=document.createElement("strong"),desc=document.createElement("span");
+      strong.textContent=item.title;desc.textContent=item.desc;content.append(strong,desc);row.append(icon,content);activityJournal.append(row);
+    });
+  }
+
+  function trackDailyAction(act){
+    ensureDailyMissions();
+    state.dailyProgress[act] = (state.dailyProgress[act] || 0) + 1;
+    refreshSidePanel();
+  }
+
+  claimMissionsBtn.addEventListener("click",()=>{
+    if(!missionsComplete()||state.dailyClaimed)return;
+    const totalPebbles = getTotalDailyPebbleReward();
+    state.dailyClaimed=true;
+    state.dailySeenComplete=false;
+    state.dailyClaimsCount = (state.dailyClaimsCount || 0) + 1;
+    addPebbles(totalPebbles);
+    unlock("a44");
+    audio(); snd.sparkle(); spawn('spark', 16);
+    toast("🎁","Objectifs terminés",`+${fmtNum(totalPebbles)} pépites ajoutées à ton stock !`);
+    logEvent("success","Récompense quotidienne",`3 défis accomplis (+${fmtNum(totalPebbles)} pépites).`,"🎁");
+    refreshAll();refreshTycoonUI();refreshSidePanel();save();
+  });
+
+  function checkMilestones(){
+    if(state.pets >= 10) unlock("a02");
+    if(state.pets >= 50) unlock("a03");
+    if(state.pets >= 200) unlock("a04");
+    if(state.pets >= 1000) unlock("a05");
+    if(state.pets >= 5000) unlock("a06");
+
+    if(state.feeds >= 10) unlock("a07");
+    if(state.feeds >= 60) unlock("a08");
+    if(state.feeds >= 250) unlock("a09");
+
+    if(state.washes >= 15) unlock("a10");
+    if(state.washes >= 75) unlock("a11");
+    if(state.washes >= 300) unlock("a12");
+
+    if(state.talks >= 15) unlock("a13");
+    if(state.talks >= 80) unlock("a14");
+    if(state.talks >= 250) unlock("a15");
+
+    if(state.tricks >= 10) unlock("a16");
+    if(state.tricks >= 40) unlock("a17");
+    if(state.tricks >= 120) unlock("a18");
+
+    if(state.pebbles >= 100) unlock("a19");
+    if(state.pebbles >= 2500) unlock("a20");
+    if(state.pebbles >= 50000) unlock("a21");
+    if(state.pebbles >= 1000000) unlock("a22");
+    if(state.pebbles >= 100000000) unlock("a23");
+    if(state.pebbles >= 10000000000) unlock("a24");
+
+    const ownedCount = ONE_TIME_ITEMS.filter(i => !!state.owned[i.id]).length;
+    if(ownedCount >= 1) unlock("a25");
+    if(ownedCount >= 3) unlock("a26");
+    if(ownedCount >= ONE_TIME_ITEMS.length) unlock("a27");
+
+    const pps = getEffectivePps();
+    if(pps >= 10) unlock("a28");
+    if(pps >= 100) unlock("a29");
+    if(pps >= 1000) unlock("a30");
+    if(pps >= 10000) unlock("a51");
+    if(pps >= 1000000) unlock("a52");
+    if(pps >= 100000000) unlock("a53");
+
+    const totalDiamondsEver = state.diamonds + state.spentDiamonds;
+    if(totalDiamondsEver >= 1) unlock("a31");
+    if(totalDiamondsEver >= 5) unlock("a32");
+    if(state.prestigeCount >= 3) unlock("a33");
+    if(state.prestigeCount >= 6) unlock("a34");
+    if(state.prestigeCount >= 10) unlock("a54");
+    if(state.prestigeCount >= 25) unlock("a55");
+    if(state.prestigeCount >= 40) unlock("a56");
+
+    const dOwnedCount = DIAMOND_ITEMS.filter(d => !!state.diamondOwned[d.id]).length;
+    if(dOwnedCount >= 1) unlock("a35");
+    if(dOwnedCount >= DIAMOND_ITEMS.length) unlock("a36");
+
+    if(state.bonheur >= 100) unlock("a37");
+    if(computeBalance() >= 85) unlock("a38");
+    if(state.resonance >= 80) unlock("a39");
+    if(state.lien >= 90) unlock("a40");
+
+    const elapsedMs = Date.now() - state.adoptedAt;
+    if(elapsedMs >= 900000) unlock("a45");
+    if(elapsedMs >= 3600000) unlock("a46");
+  }
+
   function showGame(){
     adoptScreen.classList.remove('active');
     gameScreen.classList.add('active');
+    leftShell.classList.add('visible');
+    resetBtn.style.display = "";
     petName.textContent = state.name;
-    refreshAll();
-  }
-  function adopt(){
-    const n=(nameField.value||"").trim();
-    state.name = n || "Caillou";
-    state.adoptedAt = Date.now();
-    audio(); // gesture -> unlock sound
-    snd.sparkle();
-    unlock('adopt');
-    save();
-    showGame();
-    setTimeout(()=>say("…", 1400), 450);
-    setTimeout(()=>say("oh. salut. on va passer un million d'années ensemble.", 3200), 1900);
+    ageMain.textContent = fmtSince();
+    gameStarted = true;
+    applyRockAppearance();
+    renderGiftButton();
+    ensureDailyMissions();
+    checkMilestones();
+    refreshAll();refreshTycoonUI();refreshSidePanel();
+    requestAnimationFrame(()=>{
+      sizeCanvas();
+      updateRightPanelPosition();
+    });
   }
 
-  // ---------- helpers ----------
-  function clamp(v){ return Math.max(0,Math.min(100,v)); }
-  function fr(n){ return n.toLocaleString('fr-FR'); }
+  function showAdoptScreen(){
+    hideActionTooltip();
+    closeRightPanel();
+    setDrawerPanel(null);
+    confirmBackdrop.classList.remove('open');
+    leftShell.classList.remove('visible');
+    resetBtn.style.display = "none";
+    gameScreen.classList.remove('active');
+    adoptScreen.classList.add('active');
+    nameField.value = "";
+    nameField.focus();
+  }
+
+  function adopt(){
+    const n=(nameField.value||"").trim();
+    const fresh = createInitialState();
+    Object.keys(state).forEach(k => delete state[k]);
+    Object.assign(state, fresh);
+
+    const now = Date.now();
+    state.name = n || "Caillou";
+    state.adoptedAt = now;
+    state.lastTickAt = now;
+    state.lastActionAt = now;
+    state.lastHappinessDecayStepAt = now;
+    state.lastLienDecayAt = now;
+    state.lastCleanDecayAt = now;
+    state.lastGiftCheckAt = now;
+    state.lastMinuteRateCheckAt = now;
+    state.lastMinutePps = getEffectivePps();
+    state.activeDays = [dayStamp()];
+    state.streakDays = 1;
+    state.lastActiveDay = dayStamp();
+    ensureDailyMissions();
+    audio();
+    snd.sparkle();
+    unlock('a01');
+    logEvent("info","Adoption","Tu as accueilli "+state.name+" dans ta vie.","🪨");
+    save();
+    showGame();
+    save();
+    setTimeout(()=>say("…", 1400), 450);
+    setTimeout(()=>say("oh. salut. 1 pépite/min par défaut.", 3200), 1900);
+  }
 
   function levelOf(bond){
     let lv=0; for(let i=0;i<LEVELS.length;i++){ if(bond>=LEVELS[i].min) lv=i; } return lv;
   }
   function lienPct(){
-    const lv=levelOf(state.bond);
-    const cur=LEVELS[lv].min;
-    const next=(lv+1<LEVELS.length)?LEVELS[lv+1].min:cur;
-    if(next===cur) return 100;
-    return Math.round(((state.bond-cur)/(next-cur))*100);
+    return Math.round(clamp(state.lien));
   }
 
   function refreshStats(){
+    enforceResonatorFloor();
+    const balance = computeBalance();
     fBonheur.style.width=state.bonheur+'%'; vBonheur.textContent=Math.round(state.bonheur)+'%';
     fProprete.style.width=state.proprete+'%'; vProprete.textContent=Math.round(state.proprete)+'%';
     const lp=lienPct(); fLien.style.width=lp+'%'; vLien.textContent=lp+'%';
+    fFatigue.style.width=state.fatigue+'%'; vFatigue.textContent=Math.round(state.fatigue)+'%';
+    fResonance.style.width=state.resonance+'%'; vResonance.textContent=Math.round(state.resonance)+'%';
+    fBalance.style.width=balance+'%'; vBalance.textContent=Math.round(balance)+'%';
+    fHunger.style.width=state.hunger+'%'; vHunger.textContent=Math.round(state.hunger)+'%';
+    // Accessibilité : chaque barre est exposée comme une jauge
+    [[fBonheur,'Bonheur',state.bonheur],[fProprete,'Propreté',state.proprete],[fLien,'Lien',lp],[fHunger,'Satiété',state.hunger],[fFatigue,'Fatigue',state.fatigue],[fResonance,'Résonance',state.resonance],[fBalance,'Équilibre',balance]].forEach(([fill,label,value])=>{
+      const bar = fill.parentElement;
+      bar.setAttribute('role','progressbar');
+      bar.setAttribute('aria-label',label);
+      bar.setAttribute('aria-valuemin','0');
+      bar.setAttribute('aria-valuemax','100');
+      bar.setAttribute('aria-valuenow',String(Math.round(value)));
+    });
     const lv=levelOf(state.bond);
     lvlText.textContent = lv+" · "+LEVELS[lv].title;
+    syncActionButtons();
+    applyRockAppearance();
   }
   function refreshSprout(){
     const lv=levelOf(state.bond);
@@ -606,7 +3045,6 @@
   }
   function refreshAll(){ refreshStats(); refreshSprout(); updateMood(); }
 
-  // ---------- face / mood ----------
   let currentMood='neutral';
   function setEyes(which){
     eyesOpen.style.display = which==='open' ? '' : 'none';
@@ -615,10 +3053,15 @@
   }
   function setMood(m){
     currentMood=m;
-    // defaults
     cheeks.setAttribute('opacity','0');
     brows.setAttribute('opacity','0');
     mouth.style.display=''; mouthO.style.display='none';
+    mouthO.setAttribute('rx','9'); mouthO.setAttribute('ry','11');
+    if(isSleeping()){
+      setEyes('closed');
+      mouth.setAttribute('d','M144,181 Q150,184 156,181');
+      return;
+    }
     if(m==='happy'){
       setEyes('happy'); cheeks.setAttribute('opacity','1');
       mouth.setAttribute('d','M132,174 Q150,192 168,174');
@@ -636,23 +3079,23 @@
     } else if(m==='surprised'){
       setEyes('open'); mouth.style.display='none'; mouthO.style.display='';
       mouthO.setAttribute('ry','8'); mouthO.setAttribute('rx','7');
-    } else { // neutral
+    } else {
       setEyes('open'); mouth.setAttribute('d','M138,178 Q150,182 162,178');
     }
   }
   function updateMood(){
     if(actionLock) return;
+    if(isSleeping()){ setMood('sleepy'); return; }
     if(state.bonheur<25){ setMood('sulk'); return; }
     if(state.bonheur>82 && state.proprete>65){ setMood('happy'); return; }
     if(state.bonheur>60){ setMood('content'); return; }
     setMood('neutral');
   }
 
-  // blink loop (toggle closed eyes briefly, restore mood eyes)
   function scheduleBlink(){
     const wait = 2200 + Math.random()*3500;
     setTimeout(()=>{
-      if(currentMood!=='sleepy' && !actionLock && eyesClosed.style.display==='none'){
+      if(!isSleeping() && currentMood!=='sleepy' && !actionLock && eyesClosed.style.display==='none'){
         const before = currentMood;
         setEyes('closed');
         setTimeout(()=>{ if(currentMood===before) setMood(before); }, 130);
@@ -662,15 +3105,14 @@
   }
   if(!reduceMotion) scheduleBlink();
 
-  // breathe + idle sway via JS transform (subtle), so wiggle can layer on top
   let t0=performance.now();
+  let wiggling=false;
   function idleLoop(now){
     const t=(now-t0)/1000;
     if(!reduceMotion && !wiggling){
       const s=1+Math.sin(t*1.1)*0.012;
       const ty=Math.sin(t*1.1)*1.2;
       rockEl.setAttribute('transform', `translate(0 ${ty.toFixed(2)}) scale(${s.toFixed(4)})`);
-      // shadow breathes inversely
       const sr=100+Math.sin(t*1.1)*2;
       groundShadow.setAttribute('rx', sr.toFixed(1));
     }
@@ -678,8 +3120,6 @@
   }
   requestAnimationFrame(idleLoop);
 
-  // wiggle / hop reactions
-  let wiggling=false;
   function react(kind){
     if(reduceMotion){ return; }
     wiggling=true;
@@ -692,7 +3132,6 @@
     anim.onfinish=()=>{ wiggling=false; };
   }
 
-  // ---------- thought bubble ----------
   let bubbleTimer=null;
   function say(text, holdMs){
     bubble.textContent=text;
@@ -703,7 +3142,6 @@
     }
   }
 
-  // ---------- particles ----------
   const ctx = canvas.getContext('2d');
   let parts=[];
   function sizeCanvas(){
@@ -711,16 +3149,20 @@
     canvas.width=Math.max(1,Math.floor(r.width*devicePixelRatio));
     canvas.height=Math.max(1,Math.floor(r.height*devicePixelRatio));
   }
-  sizeCanvas(); window.addEventListener('resize', sizeCanvas);
+  sizeCanvas();
+  window.addEventListener('resize', ()=>{
+    sizeCanvas();
+    updateRightPanelPosition();
+  });
 
-  function center(){ return {x:canvas.width*0.5, y:canvas.height*0.5}; }
+  function center(){ return {x:canvas.width*0.5, y:canvas.height*0.56}; }
   function spawn(type, n){
     if(reduceMotion) return;
     const c=center();
     for(let i=0;i<n;i++){
       const a=Math.random()*Math.PI*2, sp=(0.6+Math.random()*1.6)*devicePixelRatio;
-      let p={ x:c.x+(Math.random()-0.5)*60*devicePixelRatio,
-              y:c.y+(Math.random()-0.5)*30*devicePixelRatio,
+      let p={ x:c.x+(Math.random()-0.5)*50*devicePixelRatio,
+              y:c.y+(Math.random()-0.5)*24*devicePixelRatio,
               vx:Math.cos(a)*sp, vy:Math.sin(a)*sp-1.2*devicePixelRatio,
               g:0.06*devicePixelRatio, life:1, fade:0.012+Math.random()*0.01,
               type, r:(2+Math.random()*3)*devicePixelRatio, rot:Math.random()*6 };
@@ -752,7 +3194,7 @@
         ctx.fillStyle='#8a7d5a'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
       } else if(p.type==='spark'){
         ctx.fillStyle='#F2C75B'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
-      } else { // dust
+      } else {
         ctx.fillStyle='rgba(150,140,120,0.8)'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fill();
       }
     }
@@ -761,7 +3203,6 @@
   }
   requestAnimationFrame(fxLoop);
 
-  // ---------- actions ----------
   let actionLock=false;
   function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
   function addBond(n){
@@ -773,91 +3214,196 @@
       snd.level();
       const lvl=LEVELS[after];
       toast('🌱', "Niveau "+after, "Votre lien grandit : "+lvl.title+".");
-      if(after>=4) unlock('bff');
+      if(after>=4) checkMilestones();
     }
+  }
+
+  function touchActionClock(){
+    const now = Date.now();
+    state.lastActionAt = now;
+    state.lastHappinessDecayStepAt = now;
+    state.lastLienDecayAt = now;
+  }
+  function recordActionInWindow(act){
+    const cfg = ACTION_LIMITS[act];
+    const now = Date.now();
+    const active = cfg ? pruneExpiredActionTimestamps(act, cfg.windowMs) : (Array.isArray(state.actionTimestamps[act]) ? state.actionTimestamps[act] : []);
+    active.push(now);
+    active.sort((a, b) => a - b);
+    state.actionTimestamps[act] = active;
+    touchActionClock();
+  }
+
+  function triggerSleep(){
+    state.sleepingUntil = Date.now() + SLEEP_DURATION_MS;
+    state.fatigue = 100;
+    unlock("a41");
+    const sleepInfo = formatSleepRemaining();
+    say(`zzz… réveil à ${sleepInfo.clock}.`, 3500);
+    toast("😴", "Sommeil minéral", `Fin du sommeil dans ${sleepInfo.countdown} (${sleepInfo.clock}).`);
+    logEvent("info", "Sommeil", `Fin prévue à ${sleepInfo.clock} (${sleepInfo.countdown}).`, "😴");
+  }
+
+  function checkWakeUp(){
+    if(state.sleepingUntil && Date.now() >= state.sleepingUntil){
+      state.sleepingUntil = 0;
+      state.fatigue = 0;
+      state.resonance = 0;
+      state.lastLienDecayAt = Date.now();
+      say("bon réveil ! fatigue et résonance remises à 0%.", 2800);
+      logEvent("success", "Réveil", "Fatigue et résonance à 0%, production reprise.", "☀️");
+    }
+  }
+
+  /* Un tour se déroule en deux temps :
+     1) executeTrickAction : le mini-jeu démarre, AUCUN effet n'est appliqué ;
+     2) completeTrick : les effets s'appliquent à la fin (réussite, échec ou abandon). */
+  function executeTrickAction(){
+    if(isSleeping()){ closeRightPanel(); return; } // endormi pendant l'avertissement
+    if(trickInProgress) return;
+    trickInProgress = true;
+    state.trickPending = true;   // si la page est fermée en cours de tour, il comptera comme échoué
+    currentTrick = pick(TRICKS);
+    actionLock = true;
+    setMood('surprised');
+    if(Math.random() < 0.45) say(currentTrick.cmd, 0);
+    react('hop'); snd.talk();
+    setTimeout(()=>{ actionLock=false; updateMood(); }, 800);
+    syncActionButtons();
+    save();
+    launchMinigameNow();
+  }
+
+  function completeTrick(won){
+    if(!trickInProgress) return;
+    trickInProgress = false;
+    state.trickPending = false;
+    const tr = currentTrick || pick(TRICKS);
+    currentTrick = null;
+
+    trackDailyAction('trick');
+    state.tricks++;
+    if(!isSleeping()) state.fatigue = clamp(state.fatigue + 20);   // déjà endormi : pas de fatigue en plus
+    state.resonance = clamp(state.resonance + 2);
+    state.bonheur = clamp(state.bonheur - 5);
+    state.proprete = clamp(state.proprete - 5);
+    state.lien = clamp(state.lien + 2);
+    enforceResonatorFloor();
+    touchActionClock();
+
+    if(!isSleeping() && state.fatigue >= 100) triggerSleep();
+    if(won && Math.random() < 0.45) say(tr.ok, 2600);
+    updateMood();
+    checkMilestones();
+    refreshStats(); refreshTycoonUI(); refreshSidePanel();
+    save();
   }
 
   function doAction(act){
+    if(act === 'trick' && trickInProgress) return;
+    closeRightPanel();
+    hideActionTooltip();
+    checkWakeUp();
+    if(isSleeping()){
+      const sleepInfo = formatSleepRemaining();
+      say(`je dors jusqu'à ${sleepInfo.clock} (${sleepInfo.countdown})…`, 2200);
+      syncActionButtons();
+      return;
+    }
+
+    if(act === 'talk'){
+      const remSec = getTalkCooldownRemainingSec();
+      if(remSec > 0){
+        syncActionButtons();
+        return;
+      }
+    } else {
+      const cfg = ACTION_LIMITS[act];
+      if(cfg && getRemainingCharges(act) <= 0){
+        syncActionButtons();
+        return;
+      }
+    }
+
+    if(act === 'trick'){
+      audio();
+      if(state.fatigue >= 80){
+        showFatigueSleepWarning(()=>executeTrickAction());
+        return;
+      }
+      executeTrickAction();
+      return;
+    }
+
     audio();
+    trackDailyAction(act);
+
     if(act==='pet'){
       state.pets++;
-      state.bonheur=clamp(state.bonheur+7);
+      state.bonheur = clamp(state.bonheur + 1);
+      addPebbles(1);
+      state.lien = clamp(state.lien + 2);
       addBond(1);
+      touchActionClock();
       react('wiggle'); snd.pet(state.pets%6);
       spawn('dust',7); spawn('heart',2);
       actFace('happy', 900);
-      if(state.pets%3===1) say(pick(REACT.pet), 1500);
-      if(state.pets===1) unlock('pet1');
-      if(state.pets===25) unlock('pet25');
-      if(state.pets===100) unlock('pet100');
+      if(Math.random() < 0.35) say(pick(REACT.pet), 1500);
     }
     else if(act==='feed'){
       state.feeds++;
-      state.bonheur=clamp(state.bonheur+9);
+      state.hunger = clamp(state.hunger + 20);
+      state.fatigue = clamp(state.fatigue - 2);
+      state.bonheur = clamp(state.bonheur + 1);
+      state.lien = clamp(state.lien + 2);
       addBond(1);
+      recordActionInWindow('feed');
       snd.feed(); spawn('crumb',9);
       actFace('eating', 1100);
-      say(pick(REACT.feed), 1700);
-      if(state.feeds===1) unlock('feed1');
+      if(state.feeds % 8 === 0) say(pick(REACT.feed), 1700);
     }
     else if(act==='wash'){
       state.washes++;
-      state.proprete=100;
-      state.bonheur=clamp(state.bonheur+5);
-      addBond(1);
+      state.proprete = clamp(state.proprete + 1);
+      state.lien = clamp(state.lien + 2);
+      recordActionInWindow('wash');
       snd.wash(); spawn('bubble',16);
       actFace('clean', 1200);
-      say(pick(REACT.wash), 1700);
-      if(state.washes===1) unlock('wash1');
+      if(state.washes % 8 === 0) say(pick(REACT.wash), 1700);
     }
     else if(act==='talk'){
       state.talks++;
-      state.bonheur=clamp(state.bonheur+5);
+      state.lastTalkAt = Date.now();
+      state.fatigue = clamp(state.fatigue - 5);
+      state.bonheur = clamp(state.bonheur + 1);
+      state.lien = clamp(state.lien + 2);
       addBond(1);
+      touchActionClock();
       snd.talk();
-      const line = state.talks===1 ? "oh. tu me parles. personne fait jamais ça." : pick(THOUGHTS);
+      const line = state.talks===1 ? "oh. tu me parles." : pick(THOUGHTS);
       actFace('content', 2600);
       say(line, 3200);
-      if(state.talks===1) unlock('talk1');
-      if(state.talks===10) unlock('talk10');
     }
-    else if(act==='trick'){
-      state.tricks++;
-      const tr=pick(TRICKS);
-      actionLock=true;
-      setMood('surprised');
-      say(tr.cmd, 0);
-      react('hop'); snd.talk();
-      setTimeout(()=>{
-        say(tr.ok, 2600);
-        setMood('happy'); snd.sparkle(); spawn('spark',14);
-        state.bonheur=clamp(state.bonheur+8); addBond(2);
-        if(state.tricks===1) unlock('trick1');
-        refreshStats();
-        setTimeout(()=>{ actionLock=false; updateMood(); }, 900);
-        save();
-      }, 1150);
-      refreshStats(); save();
-      return;
-    }
-    if(state.bonheur>=100) unlock('bonheurMax');
-    refreshStats(); save();
+
+    enforceResonatorFloor();
+    checkMilestones();
+    refreshStats(); refreshTycoonUI(); refreshSidePanel(); save();
   }
 
-  // temporarily force a face for an action, then release
   function actFace(mood, ms){
     actionLock=true;
     setMood(mood);
     setTimeout(()=>{ actionLock=false; updateMood(); }, ms);
   }
 
-  // ---------- achievements / toasts ----------
   function unlock(id){
     if(state.achievements.indexOf(id)!==-1) return;
     const a=ACHIEVEMENTS[id]; if(!a) return;
-    state.achievements.push(id); save();
-    toast(a.emo, "Succès — "+a.t, a.d);
-    if(id!=='adopt') snd.sparkle();
+    state.achievements.push(id);
+    const suffix = a.secret ? " [Succès secret]" : "";
+    logEvent("success","Succès "+a.emo+" : "+a.t+suffix,a.d,"🏆");
+    toast("🏆", a.emo+" "+a.t+suffix, a.d);
+    if(id!=='a01') snd.sparkle();
   }
   function toast(emo, title, desc){
     const el=document.createElement('div');
@@ -871,7 +3417,6 @@
     setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); }, 4200);
   }
 
-  // ---------- time / decay ----------
   function fmtSince(){
     const ms=Date.now()-state.adoptedAt;
     let s=Math.floor(ms/1000);
@@ -881,31 +3426,147 @@
     const pad=n=>String(n).padStart(2,'0');
     return `${d} j ${pad(h)} h ${pad(m)} min ${pad(s)} s`;
   }
-  setInterval(()=>{ if(gameScreen.classList.contains('active')) ageMain.textContent=fmtSince(); }, 1000);
 
-  // gentle decay so there's a real (slow) loop
   setInterval(()=>{
     if(!gameScreen.classList.contains('active')) return;
-    state.bonheur=clamp(state.bonheur-1);
-    state.proprete=clamp(state.proprete-1);
-    refreshStats(); updateMood(); save();
-  }, 9000);
+    syncMultiDayProgress();
+    checkWakeUp();
 
-  // occasional idle thought
+    Object.keys(ACTION_LIMITS).forEach(act=>{
+      pruneExpiredActionTimestamps(act, ACTION_LIMITS[act].windowMs);
+    });
+
+    const now = Date.now();
+    const dt = Math.min(3600, Math.max(0, (now - (state.lastTickAt||now))/1000));
+    state.lastTickAt = now;
+
+    const pps = getEffectivePps();
+    if(pps > 0 && dt > 0){
+      addPebbles(pps * dt);
+    }
+
+    if(!isSleeping() && dt > 0){
+      if(state.lien > 75){
+        state.bondBonusAccumulator += dt;
+        while(state.bondBonusAccumulator >= 30){
+          state.bondBonusAccumulator -= 30;
+          addPebbles(1);
+        }
+      } else if(state.lien > 50){
+        state.bondBonusAccumulator += dt;
+        while(state.bondBonusAccumulator >= 60){
+          state.bondBonusAccumulator -= 60;
+          addPebbles(1);
+        }
+      } else {
+        state.bondBonusAccumulator = 0;
+      }
+
+      if(state.resonance > 75){
+        state.resonanceBonusAccumulator += dt;
+        while(state.resonanceBonusAccumulator >= 15){
+          state.resonanceBonusAccumulator -= 15;
+          addPebbles(2);
+        }
+      } else if(state.resonance >= 50){
+        state.resonanceBonusAccumulator += dt;
+        while(state.resonanceBonusAccumulator >= 20){
+          state.resonanceBonusAccumulator -= 20;
+          addPebbles(1);
+        }
+      } else {
+        state.resonanceBonusAccumulator = 0;
+      }
+    }
+
+    if(!isSleeping() && dt > 0){
+      if(!hasHungerLock()) state.hunger = clamp(state.hunger - dt / HUNGER_DECAY_SECONDS);
+    }
+
+    if(!isSleeping() && dt > 0 && !hasAntiTimeFatigue()){
+      let hungerFatigueMult = 1;
+      if(state.hunger < 25) hungerFatigueMult = 2;
+      else if(state.hunger < 50) hungerFatigueMult = 1.5;
+      state.fatigue = clamp(state.fatigue + (dt / 60) * hungerFatigueMult);
+      if(state.fatigue >= 100){
+        triggerSleep();
+      }
+    }
+
+    if(!isSleeping() && dt > 0 && state.lien > 0){
+      state.lien = clamp(state.lien - dt * 0.15);
+      state.lastLienDecayAt = now;
+    } else {
+      state.lastLienDecayAt = now;
+    }
+
+    if(now - (state.lastActionAt || now) > IDLE_HAPPINESS_DELAY_MS){
+      const eligibleSince = Math.max(
+        state.lastHappinessDecayStepAt || now,
+        (state.lastActionAt || now) + IDLE_HAPPINESS_DELAY_MS
+      );
+      if(now - eligibleSince >= IDLE_HAPPINESS_STEP_MS){
+        const steps = Math.floor((now - eligibleSince) / IDLE_HAPPINESS_STEP_MS);
+        state.bonheur = clamp(state.bonheur - steps);
+        state.lastHappinessDecayStepAt = eligibleSince + steps * IDLE_HAPPINESS_STEP_MS;
+      }
+    } else {
+      state.lastHappinessDecayStepAt = now;
+    }
+
+    if(hasCleanLock()){
+      state.lastCleanDecayAt = now;
+    } else if(now - (state.lastCleanDecayAt || now) >= 600000){
+      const tenMinsClean = Math.floor((now - state.lastCleanDecayAt) / 600000);
+      state.proprete = clamp(state.proprete - tenMinsClean);
+      state.lastCleanDecayAt += tenMinsClean * 600000;
+    }
+
+    if(now - (state.lastMinuteRateCheckAt || now) >= 60000){
+      const currentPps = getEffectivePps();
+      const prevPps = state.lastMinutePps || 0;
+      if(prevPps > 0 && ((currentPps - prevPps) / prevPps) > 0.10){
+        state.resonance = clamp(state.resonance + 1);
+      }
+      state.lastMinutePps = currentPps;
+      state.lastMinuteRateCheckAt = now;
+    }
+
+    if(!state.pendingGift && (now - (state.lastGiftCheckAt || now) >= 300000)){
+      state.lastGiftCheckAt = now;
+      if(state.bonheur > 75 && giftAmount() >= 1){
+        const amount = giftAmount();
+        state.pendingGift = {type: 'pebbles', amount};
+        renderGiftButton();
+        toast("🎁", "Cadeau disponible !", `${state.name} a préparé +${fmtNum(amount)} pépites.`);
+      } else if(state.bonheur < 25){
+        state.pendingGift = {type: 'dirt', amount: 0};
+        renderGiftButton();
+        toast("🪨", "Cadeau de terre", `${state.name} vous laisse de la terre inutile.`);
+      }
+    }
+
+    enforceResonatorFloor();
+    checkMilestones();
+    ageMain.textContent = fmtSince();
+    refreshStats();
+    updateMood();
+    refreshTycoonUI();
+    updateMissionsBadge();
+    updateDiamondShopBadge();
+    if(activeDrawerPanel === 'missions' || activeDrawerPanel === 'achievements') refreshSidePanel();
+    save();
+  }, 1000);
+
   setInterval(()=>{
     if(!gameScreen.classList.contains('active')||actionLock) return;
-    if(Math.random()<0.5){
-      const line = state.bonheur<25 ? "je boude. enfin, autant qu'un caillou peut bouder." : pick(THOUGHTS);
-      say(line, 3200);
+    if(Math.random()<0.35){
+      const sleepInfo = isSleeping() ? formatSleepRemaining() : null;
+      const line = isSleeping() ? `zzz… fin à ${sleepInfo.clock}` : (state.bonheur<25 ? "je boude." : pick(THOUGHTS));
+      say(line, 3000);
     }
-  }, 16000);
+  }, 18000);
 
-  // 5-minute achievement
-  setInterval(()=>{
-    if(gameScreen.classList.contains('active') && Date.now()-state.adoptedAt>=300000) unlock('time5');
-  }, 5000);
-
-  // ---------- events ----------
   adoptBtn.addEventListener('click', adopt);
   nameField.addEventListener('keydown', e=>{ if(e.key==='Enter') adopt(); });
 
@@ -915,42 +3576,62 @@
 
   soundBtn.addEventListener('click', ()=>{
     state.muted=!state.muted; save();
-    soundBtn.textContent=state.muted?'🔇':'🔊';
+    renderSoundBtn();
     if(!state.muted){ audio(); snd.pet(0); }
   });
 
   resetBtn.addEventListener('click', ()=>{
-    const ok=confirm("Abandonner "+state.name+" ?\n\nIl ne comprendra pas pourquoi. Il attendra. Longtemps. (Ceci efface votre caillou.)");
-    if(!ok) return;
-    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-    location.reload();
+    confirmBackdrop.classList.add('open');
+    cancelResetBtn.focus();
   });
 
-  // rename flow
-  function openRename(){
-    renameInput.value=state.name;
-    petName.style.display='none'; renameBtn.style.display='none';
-    renameInput.style.display='inline-block'; renameInput.focus(); renameInput.select();
-  }
-  function closeRename(commit){
-    if(commit){
-      const n=(renameInput.value||"").trim();
-      if(n){ state.name=n; petName.textContent=n; save(); }
-    }
-    renameInput.style.display='none';
-    petName.style.display=''; renameBtn.style.display='';
-  }
-  renameBtn.addEventListener('click', openRename);
-  petName.addEventListener('click', openRename);
-  renameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') closeRename(true); if(e.key==='Escape') closeRename(false); });
-  renameInput.addEventListener('blur', ()=>closeRename(true));
+  cancelResetBtn.addEventListener('click', ()=>{
+    confirmBackdrop.classList.remove('open');
+    resetBtn.focus();
+  });
 
-  // ---------- boot ----------
+  confirmResetBtn.addEventListener('click', ()=>{
+    gameStarted = false;
+    trickInProgress = false; currentTrick = null;
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    const fresh = createInitialState();
+    Object.keys(state).forEach(k => delete state[k]);
+    Object.assign(state, fresh);
+    clearTimeout(bubbleTimer);
+    bubble.classList.remove('show');
+    renderGiftButton();
+    showAdoptScreen();
+    renderSoundBtn();
+    toast("🗑️", "Caillou jeté", "Le caillou a été jeté et la sauvegarde a été effacée.");
+  });
+
+  document.addEventListener('keydown', e=>{   // Échap : ferme modale, mini-jeu ou tiroir
+    if(e.key !== 'Escape') return;
+    if(confirmBackdrop.classList.contains('open')){ confirmBackdrop.classList.remove('open'); resetBtn.focus(); }
+    else if(rightPanel.classList.contains('open')) closeRightPanel();
+    else if(activeDrawerPanel) setDrawerPanel(null);
+  });
+
+  buildShops();
   if(load()){
-    soundBtn.textContent=state.muted?'🔇':'🔊';
+    renderSoundBtn();
+    checkWakeUp();
+    const now = Date.now();
+    const dt = Math.min(getOfflineCapSeconds(), Math.max(0, (now - state.lastTickAt)/1000));
+    state.lastTickAt = now;
+    const offlineGain = getEffectivePps() * dt;
+    if(offlineGain >= 1){
+      addPebbles(offlineGain);
+      setTimeout(()=>toast("⛏️", "Pépites récoltées", `+${fmtNum(offlineGain)} pépites (hors-ligne).`), 500);
+    }
     showGame();
+    if(state.trickPending){
+      trickInProgress = true;
+      completeTrick(false);
+      toast("🎓", "Tour abandonné", "Le tour en cours a été compté comme échoué.");
+    }
   } else {
-    nameField.focus();
+    showAdoptScreen();
   }
 })();
 </script>
